@@ -17,12 +17,19 @@ Panel {
   readonly property color foreground: bar ? bar.barForeground : Color.foreground
   readonly property color dim: Qt.darker(foreground, 1.55)
   readonly property color urgent: bar ? bar.urgent : Color.urgent
+  readonly property color ready: "#a3be8c"
+  readonly property color warning: "#ebcb8b"
   readonly property color statusColor:
     voxtype && voxtype.dictationState === "recording" ? urgent
     : voxtype && voxtype.dictationState === "transcribing" ? "#e5c07b"
     : voxtype && voxtype.available ? foreground : dim
   readonly property string statusIcon:
     voxtype && voxtype.dictationState === "transcribing" ? "󰔟" : "󰍬"
+  readonly property color stateColor:
+    voxtype && voxtype.dictationState === "idle"
+      && voxtype.endpointReady ? ready
+    : voxtype && voxtype.dictationState === "recording" ? urgent
+    : warning
   readonly property var languageOptions: voxtype
     ? voxtype.languageOptionsFor(draftBackend) : []
   readonly property bool selectionChanged: voxtype
@@ -59,6 +66,14 @@ Panel {
       Quickshell.execDetached([voxtype.configurePath])
   }
 
+  function launchConfigFile() {
+    close()
+    if (voxtype)
+      Quickshell.execDetached([
+        "omarchy-launch-config-editor", voxtype.configPath
+      ])
+  }
+
   function close() {
     controller.hide()
   }
@@ -69,14 +84,9 @@ Panel {
     else if (actionIndex === 1) languageDropdown.toggle()
     else if (actionIndex === 2 && canApply)
       voxtype.applySelection(draftBackend, draftLanguage)
-    else if (actionIndex === 3 && voxtype.available)
-      voxtype.record("toggle")
-    else if (actionIndex === 4
-        && (voxtype.dictationState === "recording"
-          || voxtype.dictationState === "transcribing"))
-      voxtype.record("cancel")
-    else if (actionIndex === 5 && voxtype.controlAvailable)
+    else if (actionIndex === 3 && voxtype.controlAvailable)
       launchConfiguration()
+    else if (actionIndex === 4) launchConfigFile()
   }
 
   onOpenedChanged: if (opened) {
@@ -134,7 +144,7 @@ Panel {
       blocked: backendDropdown.popupOpen || languageDropdown.popupOpen
       onMoveRequested: function(dx, dy) {
         if (dy === 0) return
-        root.actionIndex = (root.actionIndex + dy + 6) % 6
+        root.actionIndex = (root.actionIndex + dy + 5) % 5
       }
       onActivateRequested: root.activateAction()
       onCloseRequested: root.close()
@@ -148,10 +158,6 @@ Panel {
         PanelHero {
           width: parent.width
           title: "Voxtype"
-          meta: root.voxtype ? root.voxtype.backendLabel : "Unavailable"
-          detail: root.voxtype
-            ? root.voxtype.stateLabel + " | " + root.voxtype.modelLabel
-            : "Control service unavailable"
           foreground: root.foreground
           fontFamily: bar ? bar.fontFamily : Style.font.family
           iconComponent: Component {
@@ -162,6 +168,40 @@ Panel {
               font.pixelSize: Style.font.display
             }
           }
+          trailingControl: Component {
+            BorderSurface {
+              implicitWidth: statusRow.implicitWidth + Style.space(10)
+              implicitHeight: statusRow.implicitHeight + Style.space(4)
+              color: "transparent"
+              borderSpec: Border.controlSpec(
+                "normal", root.foreground, Color.accent)
+              radius: Style.cornerRadius
+
+              Row {
+                id: statusRow
+                anchors.centerIn: parent
+                spacing: Style.space(4)
+
+                Text {
+                  text: root.voxtype
+                    ? root.voxtype.stateLabel : "Unavailable"
+                  color: root.stateColor
+                  font.family: bar ? bar.fontFamily : Style.font.family
+                  font.pixelSize: Style.font.body
+                  font.bold: true
+                }
+
+                Text {
+                  text: "| " + (root.voxtype
+                    ? root.voxtype.modelLabel : "No model")
+                  color: root.dim
+                  font.family: bar ? bar.fontFamily : Style.font.family
+                  font.pixelSize: Style.font.body
+                  font.bold: true
+                }
+              }
+            }
+          }
         }
 
         Text {
@@ -170,20 +210,7 @@ Panel {
             ? "Device: " + (root.voxtype.device || "unknown")
               + (root.voxtype.precision
                 ? " | Precision: " + root.voxtype.precision : "")
-              + "\nPause/Break or Ctrl+Delete toggles dictation"
             : "Voxtype metadata is unavailable"
-          color: root.dim
-          font.family: bar ? bar.fontFamily : Style.font.family
-          font.pixelSize: Style.font.caption
-          wrapMode: Text.WordWrap
-        }
-
-        Text {
-          visible: root.voxtype && root.voxtype.rollbackModels.length > 0
-          width: parent.width
-          text: root.voxtype
-            ? "Whisper rollback: " + root.voxtype.rollbackModels.join(", ")
-            : ""
           color: root.dim
           font.family: bar ? bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.caption
@@ -195,7 +222,7 @@ Panel {
         Dropdown {
           id: backendDropdown
           width: parent.width
-          label: "ASR backend"
+          label: "Local ASR model"
           value: root.draftBackend
           options: root.voxtype ? root.voxtype.backendOptions : []
           foreground: root.foreground
@@ -250,7 +277,7 @@ Panel {
           id: applyButton
           width: parent.width
           text: root.voxtype && root.voxtype.busy
-            ? "Applying selection..." : "Apply backend and language"
+            ? "Applying selection..." : "Apply model and language"
           iconText: root.voxtype && root.voxtype.busy ? "󰑓" : "󰄬"
           iconSpinning: root.voxtype && root.voxtype.busy
           enabled: root.canApply
@@ -269,48 +296,30 @@ Panel {
           spacing: Style.space(6)
 
           Button {
-            id: toggleButton
+            id: configureButton
             width: (parent.width - parent.spacing) / 2
-            text: root.voxtype
-              && root.voxtype.dictationState === "recording"
-              ? "Stop and transcribe" : "Toggle dictation"
-            iconText: "󰍬"
-            enabled: root.voxtype && root.voxtype.available
-              && !root.voxtype.busy
+            text: "Open Voxtype TUI"
+            iconText: "󰒓"
+            enabled: root.voxtype && root.voxtype.controlAvailable
             bordered: true
             hasCursor: root.opened && root.actionIndex === 3
             foreground: root.foreground
             fontFamily: bar ? bar.fontFamily : Style.font.family
-            onClicked: if (root.voxtype) root.voxtype.record("toggle")
+            onClicked: root.launchConfiguration()
           }
 
           Button {
-            id: cancelButton
+            id: configFileButton
             width: (parent.width - parent.spacing) / 2
-            text: "Cancel"
-            iconText: "󰜺"
-            enabled: root.voxtype
-              && (root.voxtype.dictationState === "recording"
-                || root.voxtype.dictationState === "transcribing")
+            text: "Open config file"
+            iconText: "󰷈"
+            enabled: root.voxtype !== null
             bordered: true
             hasCursor: root.opened && root.actionIndex === 4
             foreground: root.foreground
             fontFamily: bar ? bar.fontFamily : Style.font.family
-            onClicked: if (root.voxtype) root.voxtype.record("cancel")
+            onClicked: root.launchConfigFile()
           }
-        }
-
-        Button {
-          id: configureButton
-          width: parent.width
-          text: "Open full Voxtype configuration"
-          iconText: "󰒓"
-          enabled: root.voxtype && root.voxtype.controlAvailable
-          bordered: true
-          hasCursor: root.opened && root.actionIndex === 5
-          foreground: root.foreground
-          fontFamily: bar ? bar.fontFamily : Style.font.family
-          onClicked: root.launchConfiguration()
         }
       }
     }

@@ -11,11 +11,11 @@ QtObject {
   property string precision: ""
   property string device: ""
   property string language: "auto"
+  property var backendOptions: []
   property var languagesByBackend: ({
     canary: ["auto"],
     parakeet: ["auto"]
   })
-  property var rollbackModels: []
   property bool available: false
   property bool endpointReady: false
   property bool controlAvailable: false
@@ -30,18 +30,10 @@ QtObject {
     + "/.local/bin/voxtype-control"
   readonly property string configurePath: Quickshell.env("HOME")
     + "/.local/bin/voxtype-configure-launcher"
-  readonly property var backendOptions: [
-    {
-      value: "parakeet",
-      label: "Parakeet TDT v3",
-      description: "Multilingual local NeMo Speech sidecar"
-    },
-    {
-      value: "canary",
-      label: "Canary 1B Flash Q8",
-      description: "Automatic or explicit English/German"
-    }
-  ]
+  readonly property string configPath:
+    (Quickshell.env("XDG_CONFIG_HOME")
+      || Quickshell.env("HOME") + "/.config")
+      + "/voxtype/config.toml"
   readonly property string stateLabel:
     dictationState === "recording" ? "Listening"
     : dictationState === "transcribing" ? "Transcribing"
@@ -53,11 +45,30 @@ QtObject {
     : backend === "canary" ? "Canary"
     : "Unknown backend"
   readonly property string modelLabel: model !== "" ? model : "No model"
-  readonly property string tooltip: error !== "" ? error
-    : stateLabel + " | " + backendLabel
-      + (language !== "" ? " | " + languageLabel(language) : "")
-      + "\n" + modelLabel
-      + "\nLeft click: controls | Right click: configuration"
+  readonly property string tooltip: alignedTooltip()
+
+  function padRight(value, width) {
+    var text = String(value)
+    while (text.length < width) text += " "
+    return text
+  }
+
+  function alignedTooltip() {
+    var first = error !== "" ? error
+      : stateLabel + " | " + backendLabel
+        + (language !== "" ? " | " + languageLabel(language) : "")
+    var lines = [
+      first,
+      modelLabel,
+      "Left click: controls | Right click: Voxtype TUI"
+    ]
+    var width = 0
+    for (var i = 0; i < lines.length; i++)
+      width = Math.max(width, lines[i].length)
+    for (var j = 0; j < lines.length; j++)
+      lines[j] = padRight(lines[j], width)
+    return lines.join("\n")
+  }
 
   function languageLabel(code) {
     var labels = {
@@ -150,11 +161,11 @@ QtObject {
     precision = String(data.precision || "")
     device = String(data.device || "")
     language = String(data.language || "auto")
+    backendOptions = data.backend_options instanceof Array
+      ? data.backend_options : []
     if (data.languages_by_backend
         && typeof data.languages_by_backend === "object")
       languagesByBackend = data.languages_by_backend
-    rollbackModels = data.rollback_models instanceof Array
-      ? data.rollback_models : []
     if (!followerHealthy)
       dictationState = String(data.state || (available ? "stopped" : "unavailable"))
     metadataReady = true
@@ -176,14 +187,6 @@ QtObject {
       controlPath, "apply", String(nextBackend), String(nextLanguage)
     ]
     applyProcess.running = true
-    return true
-  }
-
-  function record(action) {
-    if (recordProcess.running || busy) return false
-    error = ""
-    recordProcess.command = [controlPath, "record", String(action)]
-    recordProcess.running = true
     return true
   }
 
@@ -241,19 +244,6 @@ QtObject {
       root.error = String(applyStderr.text || "").trim()
         || "Could not apply the Voxtype selection."
       root.operationFinished(false)
-      root.refreshMetadata()
-    }
-  }
-
-  property Process recordProcess: Process {
-    stderr: StdioCollector {
-      id: recordStderr
-      waitForEnd: true
-    }
-    onExited: function(exitCode) {
-      if (exitCode !== 0)
-        root.error = String(recordStderr.text || "").trim()
-          || "Could not control recording."
       root.refreshMetadata()
     }
   }
