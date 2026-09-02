@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.ilyazar.voxtype-control",
+  "name": "Voxtype Control",
+  "version": "0.1.0",
+  "author": "ilyaZar",
+  "license": "MIT",
+  "description": "Shared Voxtype status and capability-aware ASR controls.",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Voxtype Control",
+    "description": "Voxtype status, language selection, and ASR switching.",
+    "category": "Status",
+    "allowMultiple": false,
+    "defaultSection": "center"
+  }
+}
