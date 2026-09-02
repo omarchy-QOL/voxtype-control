@@ -11,6 +11,10 @@ QtObject {
   property string precision: ""
   property string device: ""
   property string language: "auto"
+  property var languagesByBackend: ({
+    canary: ["auto"],
+    parakeet: ["auto"]
+  })
   property var rollbackModels: []
   property bool available: false
   property bool endpointReady: false
@@ -88,12 +92,8 @@ QtObject {
   }
 
   function languageCodesFor(backendName) {
-    if (backendName === "canary") return ["auto", "en", "de"]
-    if (backendName === "parakeet") return [
-      "auto", "en", "de", "ru", "bg", "hr", "cs", "da", "nl",
-      "et", "fi", "fr", "el", "hu", "it", "lv", "lt", "mt",
-      "pl", "pt", "ro", "sk", "sl", "es", "sv", "uk"
-    ]
+    var values = languagesByBackend[String(backendName)]
+    if (values instanceof Array && values.length > 0) return values
     return ["auto"]
   }
 
@@ -150,6 +150,9 @@ QtObject {
     precision = String(data.precision || "")
     device = String(data.device || "")
     language = String(data.language || "auto")
+    if (data.languages_by_backend
+        && typeof data.languages_by_backend === "object")
+      languagesByBackend = data.languages_by_backend
     rollbackModels = data.rollback_models instanceof Array
       ? data.rollback_models : []
     if (!followerHealthy)
