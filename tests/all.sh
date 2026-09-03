@@ -23,6 +23,8 @@ rg -Fq 'command: ["omarchy-voxtype-status"]' "$ROOT/Service.qml"
 rg -Fq 'text += "\u00a0"' "$ROOT/Service.qml"
 rg -Fq 'lastClosedAt' "$ROOT/GuardedDropdown.qml"
 rg -Fq 'lastClosedAt' "$ROOT/GuardedSearchableDropdown.qml"
+rg -Fq 'height: root.rowHeight' "$ROOT/GuardedDropdown.qml"
+rg -Fq 'height: root.rowHeight' "$ROOT/GuardedSearchableDropdown.qml"
 ! rg -q 'systemctl|switch_asr_backend|language_cycle' "$ROOT"/*.qml
 
 printf 'ok - plugin contract\n'

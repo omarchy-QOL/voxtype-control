@@ -10,7 +10,10 @@ Ui.Dropdown {
   onPopupOpenChanged: if (!popupOpen) lastClosedAt = Date.now()
 
   MouseArea {
-    anchors.fill: parent
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    height: root.rowHeight
     z: 10
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
