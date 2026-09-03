@@ -219,7 +219,7 @@ Panel {
 
         PanelSeparator { foreground: root.foreground }
 
-        Dropdown {
+        GuardedDropdown {
           id: backendDropdown
           width: parent.width
           label: "Local ASR model"
@@ -239,11 +239,10 @@ Panel {
             var options = root.voxtype.languageOptionsFor(value)
             if (!root.optionContains(options, root.draftLanguage))
               root.draftLanguage = "auto"
-            Qt.callLater(function() { backendDropdown.close() })
           }
         }
 
-        SearchableDropdown {
+        GuardedSearchableDropdown {
           id: languageDropdown
           width: parent.width
           label: "Language"
@@ -261,7 +260,6 @@ Panel {
           onChanged: function(value) {
             root.draftTouched = true
             root.draftLanguage = value
-            Qt.callLater(function() { languageDropdown.close() })
           }
         }
 

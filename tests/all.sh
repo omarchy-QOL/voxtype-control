@@ -8,6 +8,8 @@ omarchy plugin validate "$ROOT"
 
 qmlformat "$ROOT/Service.qml" >/dev/null
 qmlformat "$ROOT/BarWidget.qml" >/dev/null
+qmlformat "$ROOT/GuardedDropdown.qml" >/dev/null
+qmlformat "$ROOT/GuardedSearchableDropdown.qml" >/dev/null
 
 jq -e '
   .id == "io.github.ilyazar.voxtype-control" and
@@ -19,8 +21,8 @@ jq -e '
 rg -Fq 'bar.shell.serviceFor(moduleName)' "$ROOT/BarWidget.qml"
 rg -Fq 'command: ["omarchy-voxtype-status"]' "$ROOT/Service.qml"
 rg -Fq 'text += "\u00a0"' "$ROOT/Service.qml"
-rg -Fq 'backendDropdown.close()' "$ROOT/BarWidget.qml"
-rg -Fq 'languageDropdown.close()' "$ROOT/BarWidget.qml"
+rg -Fq 'lastClosedAt' "$ROOT/GuardedDropdown.qml"
+rg -Fq 'lastClosedAt' "$ROOT/GuardedSearchableDropdown.qml"
 ! rg -q 'systemctl|switch_asr_backend|language_cycle' "$ROOT"/*.qml
 
 printf 'ok - plugin contract\n'
