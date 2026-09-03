@@ -19,6 +19,8 @@ jq -e '
 rg -Fq 'bar.shell.serviceFor(moduleName)' "$ROOT/BarWidget.qml"
 rg -Fq 'command: ["omarchy-voxtype-status"]' "$ROOT/Service.qml"
 rg -Fq 'text += "\u00a0"' "$ROOT/Service.qml"
+rg -Fq 'backendDropdown.close()' "$ROOT/BarWidget.qml"
+rg -Fq 'languageDropdown.close()' "$ROOT/BarWidget.qml"
 ! rg -q 'systemctl|switch_asr_backend|language_cycle' "$ROOT"/*.qml
 
 printf 'ok - plugin contract\n'

@@ -239,6 +239,7 @@ Panel {
             var options = root.voxtype.languageOptionsFor(value)
             if (!root.optionContains(options, root.draftLanguage))
               root.draftLanguage = "auto"
+            Qt.callLater(function() { backendDropdown.close() })
           }
         }
 
@@ -260,6 +261,7 @@ Panel {
           onChanged: function(value) {
             root.draftTouched = true
             root.draftLanguage = value
+            Qt.callLater(function() { languageDropdown.close() })
           }
         }
 
