@@ -49,7 +49,7 @@ QtObject {
 
   function padRight(value, width) {
     var text = String(value)
-    while (text.length < width) text += " "
+    while (text.length < width) text += "\u00a0"
     return text
   }
 
