@@ -40,6 +40,7 @@ default.
 
 - Left click opens backend and language controls.
 - Right click opens the full Voxtype configuration TUI.
+- Open config file uses the default editor and focuses text replacements.
 - Pause/Break and Ctrl+Delete remain direct `voxtype record toggle` bindings.
 
 Canary exposes automatic, English, and German routing. Parakeet TDT 0.6B v3

@@ -30,10 +30,6 @@ QtObject {
     + "/.local/bin/voxtype-control"
   readonly property string configurePath: Quickshell.env("HOME")
     + "/.local/bin/voxtype-configure-launcher"
-  readonly property string configPath:
-    (Quickshell.env("XDG_CONFIG_HOME")
-      || Quickshell.env("HOME") + "/.config")
-      + "/voxtype/config.toml"
   readonly property string stateLabel:
     dictationState === "recording" ? "Listening"
     : dictationState === "transcribing" ? "Transcribing"
@@ -127,6 +123,10 @@ QtObject {
     return options
   }
 
+  function scheduleMetadataRetry() {
+    if (!metadataRetry.running) metadataRetry.start()
+  }
+
   function updateFollower(raw) {
     try {
       var data = JSON.parse(String(raw || "{}"))
@@ -136,8 +136,8 @@ QtObject {
         next = "idle"
       dictationState = next
       followerHealthy = true
-      if (String(data.model || "") !== "") model = String(data.model)
-      if (String(data.device || "") !== "") device = String(data.device)
+      if (next === "stopped" || !metadataReady || !endpointReady)
+        scheduleMetadataRetry()
     } catch (parseError) {
       error = "Voxtype returned invalid status data."
     }
@@ -150,6 +150,7 @@ QtObject {
     } catch (parseError) {
       error = "Voxtype control returned invalid metadata."
       metadataReady = false
+      scheduleMetadataRetry()
       return false
     }
 
@@ -170,6 +171,8 @@ QtObject {
       dictationState = String(data.state || (available ? "stopped" : "unavailable"))
     metadataReady = true
     error = String(data.error || "")
+    if (endpointReady) metadataRetry.stop()
+    else scheduleMetadataRetry()
     return true
   }
 
@@ -188,6 +191,12 @@ QtObject {
     ]
     applyProcess.running = true
     return true
+  }
+
+  property Timer metadataRetry: Timer {
+    interval: 5000
+    repeat: false
+    onTriggered: root.refreshMetadata()
   }
 
   property Process followerProcess: Process {
@@ -223,6 +232,7 @@ QtObject {
       root.controlAvailable = false
       root.error = String(metadataStderr.text || "").trim()
         || "Voxtype control is unavailable."
+      root.scheduleMetadataRetry()
     }
   }
 

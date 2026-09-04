@@ -69,9 +69,7 @@ Panel {
   function launchConfigFile() {
     close()
     if (voxtype)
-      Quickshell.execDetached([
-        "omarchy-launch-config-editor", voxtype.configPath
-      ])
+      Quickshell.execDetached([voxtype.controlPath, "edit-config"])
   }
 
   function close() {
