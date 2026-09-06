@@ -6,6 +6,7 @@ Button {
   id: root
   property string label: ""
   property color checkColor: Color.accent
+  property color busyColor: Color.accent
   property bool spinning: false
   Accessible.name: label
   implicitHeight: Math.max(Style.spacing.controlHeight, contents.implicitHeight
@@ -24,7 +25,7 @@ Button {
       id: check
       anchors.verticalCenter: parent.verticalCenter
       text: root.spinning ? "󰑓" : "󰄬"
-      color: root.enabled && !root.spinning ? root.checkColor : root.foreground
+      color: root.spinning ? root.busyColor : root.enabled ? root.checkColor : root.foreground
       font.family: root.fontFamily
       font.pixelSize: root.iconSize
       RotationAnimation on rotation {

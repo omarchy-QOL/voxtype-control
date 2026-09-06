@@ -12,6 +12,7 @@ PanelKeyCatcher {
   readonly property bool canUnload: service.loaded && !service.busy && !service.dictating
   readonly property string prompt: service.loaded ? "Unload " + service.modelLabel + "?"
     : "No model is currently loaded."
+  implicitWidth: Math.max(Style.space(160), Math.ceil(question.implicitWidth))
   implicitHeight: content.implicitHeight
   signal cancelled()
 
@@ -32,10 +33,11 @@ PanelKeyCatcher {
     width: parent.width
     spacing: Style.space(12)
     Text {
+      id: question
       width: parent.width
       text: root.prompt
       textFormat: Text.PlainText
-      wrapMode: Text.WordWrap
+      elide: Text.ElideRight
       color: root.foreground
       font.family: root.fontFamily
       font.pixelSize: Style.font.body
