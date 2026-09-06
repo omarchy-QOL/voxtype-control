@@ -1,41 +1,30 @@
 #!/bin/bash
-
 set -euo pipefail
-
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 omarchy plugin validate "$ROOT"
-
-qmlformat "$ROOT/Service.qml" >/dev/null
-qmlformat "$ROOT/BarWidget.qml" >/dev/null
-qmlformat "$ROOT/GuardedDropdown.qml" >/dev/null
-qmlformat "$ROOT/GuardedSearchableDropdown.qml" >/dev/null
-
-jq -e '
-  .id == "io.github.ilyazar.voxtype-control" and
-  .version == "0.2.2" and
-  .kinds == ["service", "bar-widget"] and
-  .keepLoaded == true
-' "$ROOT/manifest.json" >/dev/null
-
-[[ "$(rg -l 'omarchy-voxtype-status' "$ROOT"/*.qml | wc -l)" -eq 1 ]]
-rg -Fq 'bar.shell.serviceFor(moduleName)' "$ROOT/BarWidget.qml"
-rg -Fq 'command: ["omarchy-voxtype-status"]' "$ROOT/Service.qml"
-rg -Fq 'text += "\u00a0"' "$ROOT/Service.qml"
-rg -Fq 'property Timer metadataRetry' "$ROOT/Service.qml"
-rg -Fq 'root.scheduleMetadataRetry()' "$ROOT/Service.qml"
-follower_body="$(
-  sed -n '/function updateFollower/,/function updateMetadata/p' \
-    "$ROOT/Service.qml"
-)"
-! rg -q 'data\.(model|device)' <<<"$follower_body"
-rg -Fq '"edit-config"' "$ROOT/BarWidget.qml"
-! rg -q 'configPath|omarchy-launch-config-editor' \
-  "$ROOT/Service.qml" "$ROOT/BarWidget.qml"
-rg -Fq 'lastClosedAt' "$ROOT/GuardedDropdown.qml"
-rg -Fq 'lastClosedAt' "$ROOT/GuardedSearchableDropdown.qml"
-rg -Fq 'height: root.rowHeight' "$ROOT/GuardedDropdown.qml"
-rg -Fq 'height: root.rowHeight' "$ROOT/GuardedSearchableDropdown.qml"
-! rg -q 'systemctl|switch_asr_backend|language_cycle' "$ROOT"/*.qml
-
-printf 'ok - plugin contract\n'
+qt_tools=/usr/lib/qt6/bin
+shell_root="${OMARCHY_PATH:-/usr/share/omarchy}/shell"
+test_root="$(mktemp -d /tmp/voxtype-qml-test.XXXXXX)"
+trap 'rm -rf -- "$test_root"' EXIT
+ln -s "$shell_root" "$test_root/qs"
+for file in "$ROOT"/*.qml; do "$qt_tools/qmlformat" "$file" >/dev/null; done
+# Host QtObject properties and Quickshell's exit-status enum lack complete type metadata.
+"$qt_tools/qmllint" -I "$test_root" -I /usr/lib/qt6/qml \
+  --missing-property disable --signal-handler-parameters disable \
+  "$ROOT"/*.qml
+node "$ROOT/tests/service.test.mjs"
+mkdir "$test_root/runtime"
+cp -a "$ROOT"/*.qml "$ROOT/tests" "$test_root/runtime/"
+cp "$ROOT/tests/qml/shell.qml" "$test_root/runtime/shell.qml"
+ln -s "$shell_root/Commons" "$test_root/runtime/Commons"
+ln -s "$shell_root/Ui" "$test_root/runtime/Ui"
+# The Qt-only runner cannot load Quickshell's statically linked QML plugins.
+if ! env -u WAYLAND_DISPLAY QT_QPA_PLATFORM=offscreen \
+  timeout 20 quickshell --no-color -p "$test_root/runtime/shell.qml" \
+  >"$test_root/runtime.log" 2>&1; then
+  cat "$test_root/runtime.log"
+  exit 1
+fi
+cat "$test_root/runtime.log"
+rg -q 'VOXTYPE_QML_TESTS_PASSED' "$test_root/runtime.log"
+printf '%s\n' 'ok - Qt 6 lint and real Quickshell/QML runtime tests'

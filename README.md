@@ -1,108 +1,129 @@
-# Voxtype Control
+# Voxtype control
 
-Capability-aware Voxtype controls for the Omarchy Quattro bar.
+A thin model/language panel for Omarchy Quattro. It requires Workflow's
+`voxtype-control` helper with schema 3 and Voxtype's JSON configuration API.
 
-The plugin replaces only the built-in Dictation child of
-`omarchy.indicators`. It keeps one shared status follower regardless of monitor
-count, shows the active local ASR backend and model, and provides backend and
-language selection.
+- Left click opens model selection; right click opens the Voxtype TUI.
+- Hover shows the model above the panel's live status, with aligned click
+  hints on the right. Ready/warning colours come from the active theme's
+  green/yellow (or ANSI color2/color3), not fixed colours.
+- The bottom buttons open Voxtype TUI, Settings, or Replacements.
+- The live status sits beneath Voxtype on the left. The right-hand box lists
+  model and runtime device. Long labels truncate instead of widening the panel.
+  Loaded device names come from worker health/NeMo metadata. With no model
+  loaded, the configured GPU stays visible and the model reads "No model".
+  Native engines without device-name telemetry show "Device unreported".
+- The main dropdown contains local models only, including external Parakeet
+  Q8/FP16 and Canary Q8. Use the Voxtype TUI for model downloads; there is no
+  download button or installation picker in this plugin. Neither the plugin
+  nor the inspected Voxtype 1.0.1 TUI provides a model-file deletion action.
+- Parakeet v3 uses automatic recognition. Canary requires English or German.
+- Apply waits for the systemd operation's exit status. Apply/unload are
+  unavailable during dictation; the backend also checks for races. An unchanged
+  healthy runtime disables Apply. A model/language change, unloaded/unhealthy
+  model, or failed Apply enables load/retry with a green checkmark.
+- The red cross asks whether to unload the backend-reported active model.
+  No is selected initially; arrows/hjkl and Tab move between Yes and No.
+  Enter confirms, and q/Escape cancels. Model files are always retained.
+- Ctrl+Insert toggles dictation; Pause/Break and Ctrl+Delete still work.
+- Ctrl+Shift+Insert toggles this panel. Left/Right or h/l move across a row;
+  Up/Down or k/j move between rows. Tab/Shift+Tab traverse all seven controls.
+  Enter activates the selected control and focuses search when appropriate.
+- With dropdowns closed, V opens the TUI, S opens Settings, and R opens
+  Replacements. Q or Escape closes the main panel. q/h/j/k/l remain text while
+  a model/language search has focus; closing search restores panel navigation.
 
-## Model discovery
+The helper owns configuration and service changes. Downloads delegate to the
+upstream CLI, without activation. There is no custom downloader, operation
+journal, recovery protocol, or second model switcher.
+A shell reload does not terminate the systemd-owned switch. The TUI edits
+shared preferences; the panel remains authoritative for model selection.
+The language dropdown describes enabled choices, not every language the model
+can recognize. EN/DE is the user's current preference restriction.
 
-Voxtype's native TUI and this plugin have different scopes.
+## Quick replacements
 
-The native TUI uses Voxtype's model catalog. It resolves the model directory
-through `XDG_DATA_HOME`; the default is:
+Press R in the panel. Your Omarchy default editor opens a private temporary
+TOML file containing only the `[text.replacements]` entries, without extra
+blank rows. Edit, save and close (`:wq` in Neovim); validation and saving happen
+automatically, then the same panel returns with its pending selections intact.
+There is no confirmation prompt. Quit without saving (`:q!`) to discard unsaved
+edits. GUI editors use their wait-for-close option. Invalid edits leave the
+config unchanged, retain the draft, and show a notification with its path.
 
-```text
-~/.local/share/voxtype/models
-```
+New pairs append in the shared config, even when typed at the top. Updates
+keep their existing positions; deleting a pair removes it. Unchanged entries,
+comments and other settings stay intact. Reordering or reformatting unchanged
+pairs is ignored; use Settings for deliberate formatting/comment changes.
+Invalid TOML and case-insensitive duplicate keys are rejected. Conflicting
+replacement edits from another session are not overwritten.
 
-Whisper files use names such as `ggml-base.en.bin`. Native-engine model
-directories live under the same root. The TUI cycles through models from its
-built-in catalog, checks that catalog against the model directory, reports
-which entries are installed, and can offer a download for a missing selection.
+Voxtype validates the result before saving. If dictation is idle and loaded,
+its capture process restarts to read the new replacements; an already-ready
+external Parakeet/Canary worker stays loaded. Native in-process models need to
+reload. An unloaded model stays unloaded. Finish dictation before saving.
+The CLI entry point is `voxtype-control edit-replacements` inside a terminal.
 
-This plugin does not use that catalog because this installation keeps Voxtype
-in remote Whisper mode. Its picker switches the two external resident
-sidecars instead:
+## Warnings and errors
 
-- Parakeet availability comes from the managed systemd unit's
-  `--asr-model` path, normally below `~/.local/share/nemo-speech/models`.
-- Canary availability requires its managed unit, launcher, and a Canary GGUF
-  below `~/.local/share/transcribe-cpp/models`.
+Notices appear below the first divider, before Speech model. Warning is theme
+yellow; Error is theme red. Repeated CLI prefixes are removed.
 
-An unavailable sidecar is omitted from the picker. The active model and device
-come from the health-gated service process rather than a hard-coded host
-default.
+- Safely rejected actions (dictation active or another operation busy) are
+  warnings. They expire after ten seconds or clear after a successful retry;
+  a dictation warning also clears when dictation ends. A failed command exiting
+  does not prove that an external controller lock has been released.
+- Failed actions remain errors until a relevant retry succeeds. A healthy
+  transcription endpoint does not erase an unrelated failed action.
+- Status/catalog errors clear when their own check succeeds. They take
+  priority over temporary warnings, and failed catalog checks retry.
 
-## Controls
+Persistent means unresolved, not that the hardware is permanently broken.
+The standalone `tests/notice_preview.qml` exercises the same notice handlers
+with simulated failures and no model operations.
 
-- Left click opens backend and language controls.
-- Right click opens the full Voxtype configuration TUI.
-- Open config file uses the default editor and focuses text replacements.
-- Pause/Break and Ctrl+Delete remain direct `voxtype record toggle` bindings.
+## Installation
 
-Canary exposes automatic, English, and German routing. Parakeet TDT 0.6B v3
-exposes its 25 supported languages plus automatic routing. The backend picker
-only lists Workflow-managed sidecars whose service and model assets are
-present; Voxtype's own model catalog remains in its native TUI.
-
-## Requirements
-
-- Omarchy Quattro
-- Voxtype 1.0 or newer
-- `omarchy-voxtype-status`
-- the Workflow-managed `~/.local/bin/voxtype-control` helper
-- `~/.local/bin/voxtype-configure-launcher`
-
-The plugin does not install models, write systemd units, or run privileged
-commands. ASR switching remains owned by `apps/voxtype-setup`.
-
-## Bar migration
-
-Keep the grouped indicator widget and remove only Dictation:
-
-```json
-{
-  "id": "omarchy.indicators",
-  "items": [
-    "ScreenRecording",
-    "Reminder",
-    "NightLight",
-    "Dnd",
-    "StayAwake"
-  ]
-}
-```
-
-Place this plugin beside it:
-
-```json
-{
-  "id": "io.github.ilyazar.voxtype-control"
-}
-```
-
-## Validate
-
-```bash
-./tests/all.sh
-```
-
-## Development install
-
-Link or copy this repository to:
+Install the helper with `apps/voxtype-setup/setup_voxtype.sh`. Keep the plugin
+as an actual Git checkout or worktree at:
 
 ```text
 ~/.config/omarchy/plugins/io.github.ilyazar.voxtype-control
 ```
 
-Then rescan the shell and put the widget in the bar. The Workflow-managed
-helper must be installed separately through `apps/voxtype-setup`.
+Do not make the plugin root a symlink: the native validator rejects it and
+the recursive file watcher does not traverse it. The active development
+worktree lives directly at the path above; `git worktree list` identifies it.
+Uncommitted development work should not be updated through the release updater.
 
-## Remove
+The service is recreated with the widget on plugin reload. It deliberately
+does not use `keepLoaded`: model operations belong to systemd, not the UI
+service. Saving plugin source now uses Omarchy's ordinary reload path.
 
-Remove the widget from the bar, then remove its plugin checkout or development
-link. The plugin creates no services, models, configuration, or persistent
-state of its own.
+This is a service + bar-widget plugin, not a system-tray application or the
+built-in Dictation indicator. Its bar icon uses the standard BarIconButton
+size, rather than the smaller status-indicator overrides.
+
+Keep Omarchy's other indicators enabled; exclude its duplicate Dictation item
+when this widget is enabled. Plugin removal only removes its widget/link.
+Use the Workflow setup's removal command to remove the controller and units.
+
+## Validation
+
+```bash
+./tests/all.sh
+```
+
+Tests use the explicit Qt 6 tools and an isolated offscreen Quickshell process
+for real QML binding checks. The plain Qt test runner cannot load Quickshell's
+statically linked QML plugins. The test service disables its polling/follower
+and overrides metadata refresh, so these tests do not access model services.
+
+Qt 6 lint resolves `qs.*` against the installed shell. Two known metadata
+gaps are excluded: dynamic host QtObject properties and Quickshell's
+`QProcess::ExitStatus` signal type. This is not a claim of exhaustive static
+type checking. Runtime tests verify hover binding preservation and that stale
+poll responses cannot override the live status stream. Keyboard shortcuts use
+the same enabled controls as mouse actions, excluding model add/unload.
+
+These checks do not prove live speech or GPU behavior.
