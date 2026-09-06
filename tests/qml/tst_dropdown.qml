@@ -138,7 +138,7 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 18) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 19) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 
@@ -228,13 +228,35 @@ TestCase {
     for (var duration of [150, 750, 1200]) {
       service.reloadState = "loading"
       wait(duration)
-      verify(reloadIcon.scale > 1 && reloadIcon.scale <= 1.16)
-      verify(reloadIcon.opacity >= 0.65 && reloadIcon.opacity <= 1)
+      verify(reloadIcon.scale > 1 && reloadIcon.scale <= 1.08)
+      verify(reloadIcon.opacity >= 0.75 && reloadIcon.opacity <= 1)
       compare(reloadIcon.text, "󰍬")
       service.reloadState = ""
       compare(reloadIcon.scale, 1)
       compare(reloadIcon.opacity, 1)
     }
+    var glyph = reloadIcon.children[0]
+    compare(glyph.renderType, Text.CurveRendering)
+    passed++
+  }
+
+  TextMetrics {
+    id: reloadMetrics
+    text: reloadIcon.text
+    font: reloadIcon.children[0].font
+  }
+
+  function test_reload_glyph_is_optically_centered_at_both_icon_sizes() {
+    service.reloadState = ""
+    var glyph = reloadIcon.children[0]
+    for (var size of [10, 13]) {
+      reloadIcon.fontSize = size
+      wait(0)
+      var center = glyph.x + reloadMetrics.tightBoundingRect.x
+        + reloadMetrics.tightBoundingRect.width / 2
+      verify(Math.abs(center - reloadIcon.width / 2) < 0.01)
+    }
+    reloadIcon.fontSize = 13
     passed++
   }
 

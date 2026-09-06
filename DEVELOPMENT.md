@@ -27,8 +27,10 @@ on multi-GPU hosts; hardware presence does not establish inference acceleration.
 
 Apply feedback belongs to the shared service, not the panel. A fresh
 post-completion status confirms readiness before the one-second green flash.
-The glyph uses Keyboard Layout Pulse's 650 ms opacity/scale animation; failures
-reset it without a success flash. Feedback never gates model usability.
+The glyph keeps the host's optical centering and uses curve rendering to avoid
+native-bitmap artifacts at fractional scales. One eased progress value drives
+an 8% scale pulse and opacity over 500 ms, with no opacity jump between cycles.
+Failures reset it without a success flash. Feedback never gates model usability.
 
 ## Notices and replacements
 
