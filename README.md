@@ -18,6 +18,8 @@ A thin model/language panel for Omarchy Quattro. It requires Workflow's
   download button or installation picker in this plugin. Neither the plugin
   nor the inspected Voxtype 1.0.1 TUI provides a model-file deletion action.
 - Parakeet v3 uses automatic recognition. Canary requires English or German.
+  Selecting Canary clears an incompatible language; choose one before Load.
+  The disabled Load button explicitly identifies a missing language choice.
 - Apply waits for the systemd operation's exit status. Apply/unload are
   unavailable during dictation; the backend also checks for races. An unchanged
   healthy runtime disables Apply. A model/language change, unloaded/unhealthy
@@ -43,6 +45,10 @@ A shell reload does not terminate the systemd-owned switch. The TUI edits
 shared preferences; the panel remains authoritative for model selection.
 The language dropdown describes enabled choices, not every language the model
 can recognize. EN/DE is the user's current preference restriction.
+Both dropdowns use an explicit owner binding: upstream selection writes cannot
+disconnect the displayed value from the draft submitted by Apply. Reopening
+the panel resets both displays to the controller selection. The header shows
+runtime state; dropdowns show the pending selection until it is applied.
 
 ## Quick replacements
 

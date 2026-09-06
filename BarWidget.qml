@@ -48,7 +48,7 @@ Panel {
       || draftModelId !== voxtype.modelId || draftLanguage !== voxtype.language)
 
   function applyDraft() {
-    if (!voxtype) return
+    if (!canApply) return
     voxtype.applySelection(draftModelId, draftLanguage)
   }
 
@@ -351,7 +351,7 @@ Panel {
           width: parent.width - unloadButton.width - parent.spacing
           label: "Speech model"
           placeholderText: "Choose an installed model..."
-          value: root.draftModelId
+          selectedValue: root.draftModelId
           options: root.voxtype ? root.voxtype.localModels : []
           foreground: root.foreground
           fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
@@ -391,8 +391,8 @@ Panel {
           id: languageDropdown
           width: parent.width
           label: "Spoken language (enabled)"
-          placeholderText: "Search supported languages..."
-          value: root.draftLanguage
+          placeholderText: "Choose a spoken language..."
+          selectedValue: root.draftLanguage
           options: root.languageOptions
           foreground: root.foreground
           fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
@@ -414,7 +414,9 @@ Panel {
           id: applyButton
           width: parent.width
           label: root.voxtype && root.voxtype.busy
-            ? root.voxtype.stateLabel : "Load STT model / Apply language selection"
+            ? root.voxtype.stateLabel
+            : root.selectedModel && root.selectedModel.codes.indexOf(root.draftLanguage) === -1
+              ? "Choose a spoken language first" : "Load STT model / Apply language selection"
           spinning: root.voxtype && root.voxtype.busy
           checkColor: root.ready
           busyColor: root.warning

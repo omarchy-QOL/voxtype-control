@@ -4,8 +4,12 @@ import qs.Ui as Ui
 Ui.SearchableDropdown {
   id: root
 
+  required property string selectedValue
   property double lastClosedAt: 0
   property int reopenGuardMs: 150
+
+  // Upstream assigns value when selecting; keep the owner's input bound.
+  Binding { target: root; property: "value"; value: root.selectedValue }
 
   onPopupOpenChanged: if (!popupOpen) lastClosedAt = Date.now()
 

@@ -11,6 +11,7 @@ TestCase {
   width: 360
   height: 160
   property bool keyboardCursor: false
+  property string selection: ""
   property int passed: 0
   property int unloadCalls: 0
   property int underlyingActivations: 0
@@ -75,6 +76,8 @@ TestCase {
     width: 300
     label: "Models"
     options: ["one", "two"]
+    selectedValue: test.selection
+    onChanged: function(value) { test.selection = value }
     hasCursor: test.keyboardCursor
   }
 
@@ -124,8 +127,34 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 13) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 15) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
+  }
+
+  function test_selection_stays_bound_after_selecting_then_reopening_data() {
+    return [
+      {tag: "model", before: "Parakeet", after: "Canary", key: Qt.Key_C},
+      {tag: "language", before: "Automatic", after: "German", key: Qt.Key_G}
+    ]
+  }
+
+  function test_selection_stays_bound_after_selecting_then_reopening(data) {
+    dropdown.options = [data.before, data.after]
+    for (var i = 0; i < 3; i++) {
+      selection = data.before
+      dropdown.open()
+      wait(0)
+      keyClick(data.key)
+      keyClick(Qt.Key_Return)
+      compare(selection, data.after)
+      selection = data.before
+      compare(dropdown.value, data.before)
+      selection = ""
+      compare(dropdown.value, "")
+      selection = data.after
+      compare(dropdown.value, data.after)
+    }
+    passed++
   }
 
   function test_qml_navigation_array_and_object_identity() {

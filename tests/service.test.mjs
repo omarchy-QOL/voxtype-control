@@ -115,6 +115,24 @@ panel.voxtype.language = "en";
 panel.selectedModel.reason = "Missing model";
 assert.equal(vm.runInContext(condition, panel), false);
 assert.ok(!source.includes("pendingOperation"));
+const submitted = [];
+panel.voxtype.applySelection = (id, language) => submitted.push([id, language]);
+Object.defineProperty(panel, "canApply", {get: () => vm.runInContext(condition, panel)});
+vm.runInContext(widget.match(/  function applyDraft\([^]*?\n  \}/)[0], panel);
+panel.selectedModel.reason = "";
+panel.voxtype.modelId = "parakeet";
+panel.voxtype.language = "auto";
+panel.draftModelId = "canary";
+for (const loaded of [false, true, false, true]) {
+  panel.voxtype.loaded = loaded;
+  panel.draftLanguage = "";
+  const before = submitted.length;
+  panel.applyDraft();
+  assert.equal(submitted.length, before);
+  panel.draftLanguage = "de";
+  panel.applyDraft();
+  assert.deepEqual(submitted.at(-1), ["canary", "de"]);
+}
 assert.ok(!widget.includes("recover"));
 assert.ok(!widget.includes("Language is controlled by this model."));
 assert.ok(!widget.includes("Choose the language you are speaking."));
