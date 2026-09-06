@@ -11,7 +11,7 @@ const context = vm.createContext({ metadataUpdated() {}, refreshMetadata() {},
     { value: "canary", codes: ["en", "de"], reason: "" },
     { value: "moonshine", codes: ["ja"], reason: "" }
   ], modelId: "", language: "", controlPath: "/test/voxtype-control" });
-for (const name of ["modelFor", "languageOptionsFor", "defaultLanguageFor", "updateStatus", "updateFollower",
+for (const name of ["modelFor", "languageOptionsFor", "defaultLanguageFor", "updateStatus", "updateHardware", "updateFollower",
   "request", "cleanError", "clearWarning", "warn", "reportFailure", "resolveFailure", "finishAction"]) {
   const code = source.match(new RegExp(`  function ${name}\\([^]*?\\n  \\}`))?.[0];
   assert.ok(code, name);
@@ -21,18 +21,19 @@ assert.equal(context.defaultLanguageFor("parakeet"), "auto");
 assert.equal(context.defaultLanguageFor("canary"), "");
 assert.equal(context.defaultLanguageFor("moonshine"), "ja");
 assert.equal(context.defaultLanguageFor("missing"), "");
-context.updateStatus(JSON.stringify({ schema: 3, model_id: "canary", language: "de",
+context.updateStatus(JSON.stringify({ schema: 4, model_id: "canary", language: "de",
   state: "streaming", endpoint_ready: true, loaded: true, processes_active: true }));
 assert.equal(context.polledState, "streaming");
-context.updateStatus('{"schema":3,"loaded":true,"device_label":"AMD Radeon RX 6400"}');
-assert.equal(context.deviceLabel, "AMD Radeon RX 6400");
-context.updateStatus('{"schema":3,"loaded":false,"device_label":"AMD Radeon RX 6400"}');
-assert.equal(context.deviceLabel, "AMD Radeon RX 6400");
+context.updateHardware('{"schema":4,"gpus":["Intel","AMD Radeon RX 6400"],"preferred_gpu":"RX 6400"}');
+context.updateStatus('{"schema":4,"loaded":true}');
+assert.equal(context.hardwareLabel, "AMD Radeon RX 6400");
+context.updateStatus('{"schema":4,"loaded":false}');
+assert.equal(context.hardwareLabel, "AMD Radeon RX 6400");
 assert.equal(vm.runInContext(source.match(/readonly property string modelLabel: (.*)/)[1], context), "No model");
-context.updateStatus('{"schema":3,"loaded":true}');
-assert.equal(context.deviceLabel, "Device unreported");
+context.updateStatus('{"schema":4,"loaded":true,"execution_device":null}');
+assert.equal(context.hardwareLabel, "AMD Radeon RX 6400");
 context.updateFollower('{"alt":"recording"}');
-context.updateStatus('{"schema":3,"state":"idle","model_id":"canary","language":"de"}');
+context.updateStatus('{"schema":4,"state":"idle","model_id":"canary","language":"de"}');
 assert.equal(context.followerState, "recording");
 assert.equal(context.followerHealthy, true);
 assert.equal(context.polledState, "idle");
@@ -40,6 +41,21 @@ context.updateFollower('invalid JSON');
 assert.equal(context.followerHealthy, false);
 assert.equal(context.defaultLanguageFor("canary"), "de");
 assert.throws(() => context.updateStatus('{"schema":2}'));
+assert.throws(() => context.updateStatus('{"schema":3}'));
+assert.throws(() => context.updateHardware('{"schema":3,"gpus":[]}'));
+assert.throws(() => context.updateHardware('{"schema":4,"gpus":null,"preferred_gpu":""}'));
+assert.throws(() => context.updateHardware('{"schema":4,"gpus":[""],"preferred_gpu":""}'));
+for (const [gpus, preference, expected] of [
+  [["Intel", "AMD Radeon RX 6400"], "", "2 GPUs (selection unclear)"],
+  [["AMD Radeon RX 6400", "AMD Radeon RX 6400"], "RX 6400", "2 GPUs (selection unclear)"],
+  [["Intel"], "RX 6400", "Configured GPU not found"],
+  [["Intel"], "", "Intel"],
+  [[], "", "No GPU detected"],
+  [["Intel", "AMD Radeon RX 6400"], "rx 6400", "AMD Radeon RX 6400"],
+]) {
+  context.updateHardware(JSON.stringify({schema: 4, gpus, preferred_gpu: preference}));
+  assert.equal(context.hardwareLabel, expected);
+}
 context.error = "previous error";
 context.errorOperation = "apply";
 context.request(["apply", "canary", "en"]);

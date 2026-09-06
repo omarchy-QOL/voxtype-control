@@ -289,7 +289,7 @@ Panel {
               anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
               implicitWidth: Math.min(content.width * 0.65, Math.max(
-                modelText.implicitWidth, deviceText.implicitWidth) + Style.space(16))
+                modelText.implicitWidth, hardwareText.implicitWidth) + Style.space(16))
               implicitHeight: statusColumn.implicitHeight + Style.space(10)
               color: "transparent"
               borderSpec: Border.controlSpec(
@@ -315,9 +315,9 @@ Panel {
                 }
 
                 Text {
-                  id: deviceText
+                  id: hardwareText
                   width: parent.width
-                  text: root.voxtype ? root.voxtype.deviceLabel : "Device unreported"
+                  text: root.voxtype ? root.voxtype.hardwareLabel : "GPU unavailable"
                   textFormat: Text.PlainText
                   elide: Text.ElideRight
                   color: root.foreground
