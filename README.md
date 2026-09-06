@@ -49,10 +49,10 @@ Inside the panel:
 | Arrows or `h/j/k/l` | Move between controls     |
 | `Tab` / `Shift+Tab` | Next / previous control   |
 | `Enter`             | Activate or open search   |
-| `V`                 | Open Voxtype TUI          |
-| `S`                 | Open settings             |
-| `R`                 | Edit replacements         |
-| `Q` / `Esc`         | Close the panel or dialog |
+| `v`                 | Open Voxtype TUI          |
+| `s`                 | Open settings             |
+| `r`                 | Edit replacements         |
+| `q` / `Esc`         | Close the panel or dialog |
 
 While typing in a search field, letters remain ordinary text.
 

@@ -488,7 +488,7 @@ Panel {
             font.bold: true
           }
           Text {
-          text: "[V]oxtype  [S]ettings  [R]eplacements"
+          text: "[v]oxtype  [s]ettings  [r]eplacements"
           textFormat: Text.PlainText
           color: root.dim
           font.family: root.bar ? root.bar.fontFamily : Style.font.family

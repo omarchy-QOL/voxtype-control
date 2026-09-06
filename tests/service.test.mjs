@@ -193,7 +193,7 @@ assert.ok(widget.includes("readonly property var actions: [].concat.apply([], co
 assert.ok(widget.includes('text: "h/j/k/l: move"'));
 assert.ok(widget.includes('text: "Settings"'));
 assert.ok(widget.includes('text: "Replacements"'));
-assert.ok(widget.includes('text: "[V]oxtype  [S]ettings  [R]eplacements"'));
+assert.ok(widget.includes('text: "[v]oxtype  [s]ettings  [r]eplacements"'));
 launch.editorLauncher = {};
 launch.editingReplacements = false;
 launch.ipcTarget = "voxtype.editor.DP-3";
