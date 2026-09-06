@@ -189,7 +189,9 @@ Panel {
     bar: root.bar
     open: root.opened && !root.editingReplacements
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(440))
+    contentWidth: panel.fittedContentWidth(root.unloadingModel && unloadLoader.item
+      ? unloadLoader.item.implicitWidth + panel.padding * 2
+        + Border.left(panel.borderSpec) + Border.right(panel.borderSpec) : Style.space(440))
     contentHeight: panel.fittedContentHeight(root.unloadingModel && unloadLoader.item
       ? unloadLoader.item.implicitHeight : content.implicitHeight)
 
@@ -415,8 +417,9 @@ Panel {
             ? root.voxtype.stateLabel : "Load STT model / Apply language selection"
           spinning: root.voxtype && root.voxtype.busy
           checkColor: root.ready
+          busyColor: root.warning
           enabled: root.canApply
-          opacity: enabled ? 1 : 0.45
+          opacity: enabled || spinning ? 1 : 0.45
           bordered: true
           hasCursor: root.opened && root.actionIndex === 3
           onHovered: function(hovered) { if (hovered) root.actionIndex = 3 }

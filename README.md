@@ -22,9 +22,12 @@ A thin model/language panel for Omarchy Quattro. It requires Workflow's
   unavailable during dictation; the backend also checks for races. An unchanged
   healthy runtime disables Apply. A model/language change, unloaded/unhealthy
   model, or failed Apply enables load/retry with a green checkmark.
+  While switching, only the rotating icon uses the current theme's yellow.
 - The red cross asks whether to unload the backend-reported active model.
   No is selected initially; arrows/hjkl and Tab move between Yes and No.
   Enter confirms, and q/Escape cancels. Model files are always retained.
+  The confirmation fits its single-line question, including panel insets.
+  Names wider than the screen are elided, never wrapped.
 - Ctrl+Insert toggles dictation; Pause/Break and Ctrl+Delete still work.
 - Ctrl+Shift+Insert toggles this panel. Left/Right or h/l move across a row;
   Up/Down or k/j move between rows. Tab/Shift+Tab traverse all seven controls.

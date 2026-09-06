@@ -1,5 +1,6 @@
 import QtQuick
 import QtTest
+import qs.Commons
 import qs.Ui
 import "../.." as Plugin
 
@@ -24,6 +25,7 @@ TestCase {
     label: "Load STT model / Apply language selection"
     foreground: "#eeeeee"
     checkColor: "#00ff00"
+    busyColor: colors.warning
   }
 
   Plugin.StateColors { id: colors; theme.path: "" }
@@ -50,7 +52,7 @@ TestCase {
     Loader {
       id: unloadPicker
       active: false
-      width: 320
+      width: item ? Math.min(Style.space(440), item.implicitWidth) : 320
       sourceComponent: Component {
         Plugin.UnloadModel {
           service: test.fixtureService
@@ -122,7 +124,7 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 12) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 13) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 
@@ -161,6 +163,10 @@ TestCase {
     applyButton.visible = true
     for (var duration of [110, 230, 410]) {
       applyButton.spinning = true
+      colors.load('yellow = "#abcdef"')
+      compare(icon.color, colors.warning)
+      colors.load('color3 = "#fedcba"')
+      compare(icon.color, colors.warning)
       wait(duration)
       verify(icon.rotation > 0)
       applyButton.spinning = false
@@ -170,6 +176,31 @@ TestCase {
       compare(icon.rotation, 0)
     }
     applyButton.visible = false
+    passed++
+  }
+
+  function test_confirmation_width_tracks_prompt_and_caps_long_names() {
+    service.modelId = "sizing"
+    service.loaded = true
+    service.modelOptions = [{value: "sizing", label: "Q8"}]
+    unloadPicker.active = true
+    wait(0)
+    var content = unloadPicker.item.children[0]
+    var question = content.children[0]
+    var buttons = content.children[1]
+    compare(unloadPicker.width, Style.space(160))
+    service.modelOptions = [{value: "sizing", label: "Parakeet TDT v3 FP16"}]
+    wait(0)
+    compare(unloadPicker.width, Math.ceil(question.implicitWidth))
+    compare(buttons.width, Math.ceil(question.implicitWidth))
+    compare(buttons.children[0].width, buttons.children[1].width)
+    service.modelOptions = [{value: "sizing", label: "A very long model name ".repeat(8)}]
+    wait(0)
+    compare(unloadPicker.width, Style.space(440))
+    compare(question.wrapMode, Text.NoWrap)
+    compare(question.elide, Text.ElideRight)
+    verify(question.height < question.font.pixelSize * 2)
+    unloadPicker.active = false
     passed++
   }
 
