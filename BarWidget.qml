@@ -30,10 +30,12 @@ Panel {
   readonly property color warning: stateColors.warning
   readonly property color statusColor:
     voxtype && voxtype.dictationState === "recording" ? urgent
+    : voxtype && voxtype.reloading ? warning
+    : voxtype && voxtype.readyFlash ? ready
     : voxtype && voxtype.dictationState === "transcribing" ? warning
     : voxtype && voxtype.available ? foreground : dim
   readonly property string statusIcon:
-    voxtype && voxtype.dictationState === "transcribing" ? "󰔟" : "󰍬"
+    voxtype && !voxtype.reloading && voxtype.dictationState === "transcribing" ? "󰔟" : "󰍬"
   readonly property color stateColor:
     voxtype && voxtype.stateLabel === "Ready" ? ready
     : voxtype && voxtype.stateLabel === "Listening" ? urgent
@@ -162,6 +164,15 @@ Panel {
     bar: root.bar
     text: root.statusIcon
     foreground: root.statusColor
+    iconComponent: Component {
+      ReloadIcon {
+        text: root.statusIcon
+        color: root.statusColor
+        fontFamily: button.fontFamily
+        fontSize: button.fontSize
+        pulsing: root.voxtype && root.voxtype.reloading
+      }
+    }
     useActiveColor: false
     active: root.opened
     onPressed: function(mouseButton) {

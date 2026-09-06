@@ -15,6 +15,7 @@ TestCase {
   property int passed: 0
   property int unloadCalls: 0
   property int underlyingActivations: 0
+  property int statusRefreshes: 0
   property alias fixtureService: service
   property var controlRows: [[dropdown, notice], [tooltip]]
   readonly property var actions: [].concat.apply([], controlRows)
@@ -30,6 +31,15 @@ TestCase {
   }
 
   Plugin.StateColors { id: colors; theme.path: "" }
+  Plugin.ReloadIcon {
+    id: reloadIcon
+    width: 18
+    height: 18
+    text: "󰍬"
+    pulsing: service.reloading
+    color: service.reloading ? colors.warning
+      : service.readyFlash ? colors.ready : "#eeeeee"
+  }
   Plugin.TooltipContent {
     id: tooltip
     visible: false
@@ -43,6 +53,7 @@ TestCase {
     follower.running: false
     poll.running: false
     function refreshMetadata() {}
+    function refreshStatus() { test.statusRefreshes++ }
     function unload() { test.unloadCalls++ }
   }
 
@@ -127,7 +138,7 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 15) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 18) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 
@@ -153,6 +164,76 @@ TestCase {
       compare(dropdown.value, "")
       selection = data.after
       compare(dropdown.value, data.after)
+    }
+    passed++
+  }
+
+  function test_reload_feedback_waits_for_fresh_ready_and_expires() {
+    service.readyTimer.stop()
+    service.operation = "apply"
+    service.operationBusy = true
+    service.reloadState = "loading"
+    service.followerHealthy = false
+    service.updateStatus('{"schema":4,"loaded":true,"endpoint_ready":true,"busy":true}')
+    verify(service.reloading)
+    compare(reloadIcon.color, colors.warning)
+    service.statusProcess.epoch = service.revision
+    service.operationBusy = false
+    service.finishAction(true, "")
+    var refreshes = statusRefreshes
+    service.statusProcess.exited(0, 0)
+    compare(statusRefreshes, refreshes + 1)
+    verify(service.reloading)
+    verify(!service.readyFlash)
+    service.updateStatus('{"schema":4,"state":"idle","loaded":true,"endpoint_ready":true,"processes_active":true}')
+    verify(!service.reloading)
+    verify(service.readyFlash)
+    compare(reloadIcon.color, colors.ready)
+    compare(service.stateLabel, "Ready")
+    compare(service.busy, false)
+    compare(service.controlAvailable, true)
+    compare(service.readyTimer.interval, 1000)
+    wait(250)
+    verify(service.readyFlash)
+    tryCompare(service, "readyFlash", false, 1500)
+    compare(String(reloadIcon.color), "#eeeeee")
+    passed++
+  }
+
+  function test_reload_failures_and_unload_do_not_flash_success() {
+    service.readyTimer.stop()
+    service.operation = "apply"
+    service.reloadState = "loading"
+    service.finishAction(false, "Load failed")
+    compare(service.reloading, false)
+    service.updateStatus('{"schema":4,"state":"idle","loaded":true,"endpoint_ready":true}')
+    compare(service.readyFlash, false)
+    service.resolveFailure("apply")
+    service.reloadState = "loading"
+    service.updateStatus('{"schema":4,"state":"idle","loaded":true,"endpoint_ready":true}')
+    compare(service.readyFlash, false)
+    service.reloadState = "loading"
+    service.finishAction(true, "")
+    service.updateStatus('{"schema":4,"state":"stopped","loaded":false,"endpoint_ready":false}')
+    compare(service.reloading, false)
+    compare(service.readyFlash, false)
+    service.operation = "unload"
+    service.finishAction(true, "")
+    compare(service.readyFlash, false)
+    passed++
+  }
+
+  function test_reload_pulse_repeats_and_resets_without_changing_glyph() {
+    service.readyTimer.stop()
+    for (var duration of [150, 750, 1200]) {
+      service.reloadState = "loading"
+      wait(duration)
+      verify(reloadIcon.scale > 1 && reloadIcon.scale <= 1.16)
+      verify(reloadIcon.opacity >= 0.65 && reloadIcon.opacity <= 1)
+      compare(reloadIcon.text, "󰍬")
+      service.reloadState = ""
+      compare(reloadIcon.scale, 1)
+      compare(reloadIcon.opacity, 1)
     }
     passed++
   }

@@ -34,6 +34,10 @@ Parakeet v3 recognizes languages automatically. Canary requires **English** or
 The header shows the current model; dropdowns show your pending selection.
 The GPU row identifies hardware, not a guarantee of GPU acceleration.
 
+You can close the menu while a model or language change is applying. The
+microphone keeps pulsing yellow, then flashes green for one second when Ready.
+You can dictate immediately; the flash does not add a delay.
+
 ## Demo
 
 Video walkthrough coming soon.

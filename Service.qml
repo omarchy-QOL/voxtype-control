@@ -20,6 +20,10 @@ QtObject {
   property bool operationBusy: false
   property bool downloadBusy: false
   property string operation: ""
+  property string reloadState: ""
+  readonly property bool reloading: reloadState !== ""
+  readonly property bool readyFlash: readyTimer.running && loaded && endpointReady
+    && !busy && statusError === ""
   property string error: ""
   property string errorOperation: ""
   property string warning: ""
@@ -80,6 +84,8 @@ QtObject {
   }
 
   function finishAction(success, raw) {
+    revision++
+    if (operation === "apply") reloadState = success ? "checking" : ""
     if (!success) reportFailure(raw, operation)
     else {
       resolveFailure(operation)
@@ -94,6 +100,8 @@ QtObject {
     interval: 10000
     onTriggered: root.clearWarning()
   }
+
+  property Timer readyTimer: Timer { interval: 1000 }
 
   function modelFor(identity) {
     for (var i = 0; i < modelOptions.length; i++)
@@ -131,6 +139,10 @@ QtObject {
     downloadBusy = data.download_busy === true
     if (wasDownloading && !downloadBusy) refreshMetadata()
     statusError = ""
+    if (reloading && !busy) {
+      if (reloadState === "checking" && loaded && endpointReady) readyTimer.restart()
+      reloadState = ""
+    }
     metadataUpdated()
   }
 
@@ -179,6 +191,8 @@ QtObject {
     revision++
     clearWarning()
     operation = argv[0]
+    readyTimer.stop()
+    reloadState = operation === "apply" ? "loading" : ""
     applyProcess.command = [controlPath].concat(argv)
     applyProcess.running = true
   }
@@ -210,11 +224,15 @@ QtObject {
     stdout: StdioCollector { id: statusOutput; waitForEnd: true }
     stderr: StdioCollector { id: statusErrors; waitForEnd: true }
     onExited: function(code) {
-      if (epoch !== root.revision) return
+      // Completion needs a fresh observation, not an in-flight loading poll.
+      if (epoch !== root.revision) { root.refreshStatus(); return }
       try {
         if (code !== 0) throw new Error(String(statusErrors.text).trim())
         root.updateStatus(statusOutput.text)
-      } catch (failure) { root.statusError = root.cleanError(failure) }
+      } catch (failure) {
+        root.statusError = root.cleanError(failure)
+        if (!root.busy) root.reloadState = ""
+      }
     }
   }
   property Process catalogProcess: Process {
