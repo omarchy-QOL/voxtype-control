@@ -1,7 +1,7 @@
 # Voxtype control
 
 A thin model/language panel for Omarchy Quattro. It requires Workflow's
-`voxtype-control` helper with schema 3 and Voxtype's JSON configuration API.
+`voxtype-control` helper with schema 4 and Voxtype's JSON configuration API.
 
 - Left click opens model selection; right click opens the Voxtype TUI.
 - Hover shows the model above the panel's live status, with aligned click
@@ -9,10 +9,10 @@ A thin model/language panel for Omarchy Quattro. It requires Workflow's
   green/yellow (or ANSI color2/color3), not fixed colours.
 - The bottom buttons open Voxtype TUI, Settings, or Replacements.
 - The live status sits beneath Voxtype on the left. The right-hand box lists
-  model and runtime device. Long labels truncate instead of widening the panel.
-  Loaded device names come from worker health/NeMo metadata. With no model
-  loaded, the configured GPU stays visible and the model reads "No model".
-  Native engines without device-name telemetry show "Device unreported".
+  model and host GPU. Long labels truncate instead of widening the panel.
+  Hardware discovery uses Fastfetch, independently of model loading. Unloading
+  changes the model to "No model" without clearing the hardware name. This row
+  identifies hardware; it does not claim that inference uses GPU acceleration.
 - The main dropdown contains local models only, including external Parakeet
   Q8/FP16 and Canary Q8. Use the Voxtype TUI for model downloads; there is no
   download button or installation picker in this plugin. Neither the plugin
@@ -99,6 +99,21 @@ Uncommitted development work should not be updated through the release updater.
 The service is recreated with the widget on plugin reload. It deliberately
 does not use `keepLoaded`: model operations belong to systemd, not the UI
 service. Saving plugin source now uses Omarchy's ordinary reload path.
+If a rescan retains compiled QML after a helper schema change, run
+`omarchy restart shell`. This does not restart the systemd-owned speech model.
+
+Fastfetch (included in Omarchy) supplies GPU inventory through
+`voxtype-control hardware`. The shared service refreshes it at startup and on
+panel opening/metadata refresh, never during ordinary status polling. There is
+no persistent hardware cache or additional service. A unique
+`settings.json` `device_match` chooses the displayed GPU; without a preference,
+only a single-GPU inventory selects itself. Multiple or unmatched GPUs are
+reported explicitly, never guessed by enumeration order.
+
+Hardware-discovery failures affect only that row, not model controls. A later
+metadata refresh retries discovery. Actual execution-device evidence remains
+separate in `voxtype-control status`; native engines without telemetry report
+`execution_device: null`, including on machines with a GPU.
 
 This is a service + bar-widget plugin, not a system-tray application or the
 built-in Dictation indicator. Its bar icon uses the standard BarIconButton
@@ -124,6 +139,6 @@ gaps are excluded: dynamic host QtObject properties and Quickshell's
 `QProcess::ExitStatus` signal type. This is not a claim of exhaustive static
 type checking. Runtime tests verify hover binding preservation and that stale
 poll responses cannot override the live status stream. Keyboard shortcuts use
-the same enabled controls as mouse actions, excluding model add/unload.
+the same enabled controls as mouse actions, including unload confirmation.
 
 These checks do not prove live speech or GPU behavior.

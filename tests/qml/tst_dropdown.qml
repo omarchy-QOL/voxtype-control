@@ -91,7 +91,7 @@ TestCase {
 
   function test_follower_wins_over_older_poll() {
     service.updateFollower('{"alt":"recording"}')
-    service.updateStatus('{"schema":3,"state":"idle"}')
+    service.updateStatus('{"schema":4,"state":"idle"}')
     compare(service.dictationState, "recording")
     service.followerHealthy = false
     compare(service.dictationState, "idle")
@@ -122,7 +122,7 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 11) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 12) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 
@@ -217,7 +217,7 @@ TestCase {
     compare(notice.message, "Missing model")
     compare(notice.warning, false)
     wait(100)
-    service.updateStatus('{"schema":3,"state":"idle","endpoint_ready":true}')
+    service.updateStatus('{"schema":4,"state":"idle","endpoint_ready":true}')
     compare(service.error, "Missing model")
     service.operation = "apply"
     service.finishAction(true, "")
@@ -248,6 +248,30 @@ TestCase {
     tooltip.stateColor = colors.warning
     compare(left.children[1].text, "Switching")
     compare(left.children[1].color, colors.warning)
+    passed++
+  }
+
+  function test_hardware_survives_all_model_transitions() {
+    service.modelOptions = [{value: "test", label: "Test model"}]
+    service.updateHardware('{"schema":4,"gpus":["Intel","AMD Radeon RX 6400"],"preferred_gpu":"RX 6400"}')
+    for (var state of ["stopped", "loading", "idle", "recording", "failed", "idle"]) {
+      service.updateStatus(JSON.stringify({schema: 4, state: state,
+        loaded: state !== "stopped" && state !== "failed", execution_device: null}))
+      compare(service.hardwareLabel, "AMD Radeon RX 6400")
+      compare(service.hardwareProcess.running, false)
+    }
+    service.statusError = "Status unavailable"
+    compare(service.hardwareLabel, "AMD Radeon RX 6400")
+    service.statusError = ""
+    service.updateHardware('{"schema":4,"gpus":["Intel"],"preferred_gpu":""}')
+    compare(service.hardwareLabel, "Intel")
+    service.updateHardware('{"schema":4,"gpus":["Intel","AMD"],"preferred_gpu":""}')
+    compare(service.hardwareLabel, "2 GPUs (selection unclear)")
+    service.hardwareProcess.exited(1, 0)
+    compare(service.hardwareLabel, "GPU unavailable")
+    compare(service.controlAvailable, true)
+    service.updateHardware('{"schema":4,"gpus":["Intel"],"preferred_gpu":""}')
+    compare(service.hardwareLabel, "Intel")
     passed++
   }
 }

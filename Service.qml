@@ -11,7 +11,7 @@ QtObject {
   readonly property string dictationState: followerHealthy ? followerState : polledState
   property string modelId: ""
   property string language: ""
-  property string deviceLabel: "Device unreported"
+  property string hardwareLabel: "GPU unavailable"
   property var modelOptions: []
   readonly property var localModels: modelOptions.filter(function(model) { return model.installed === true })
   property bool endpointReady: false
@@ -119,13 +119,12 @@ QtObject {
 
   function updateStatus(raw) {
     var data = JSON.parse(String(raw))
-    if (data.schema !== 3) throw new Error("Install the current Voxtype helper")
+    if (data.schema !== 4) throw new Error("Install the current Voxtype helper")
     modelId = String(data.model_id || "")
     language = String(data.language || "")
     polledState = String(data.state || "unknown")
     endpointReady = data.endpoint_ready === true
     loaded = data.loaded === true
-    deviceLabel = String(data.device_label || "Device unreported")
     processesActive = data.processes_active === true
     operationBusy = data.busy === true
     var wasDownloading = downloadBusy
@@ -151,7 +150,24 @@ QtObject {
 
   function refreshMetadata() {
     if (!catalogProcess.running) catalogProcess.running = true
+    if (!hardwareProcess.running) hardwareProcess.running = true
     refreshStatus()
+  }
+
+  function updateHardware(raw) {
+    var data = JSON.parse(String(raw))
+    if (data.schema !== 4 || !Array.isArray(data.gpus)
+        || data.gpus.some(function(name) { return typeof name !== "string" || !name.trim() })
+        || typeof data.preferred_gpu !== "string")
+      throw new Error("Invalid GPU inventory")
+    var match = data.preferred_gpu.trim().toLowerCase()
+    var matches = match ? data.gpus.filter(function(name) {
+      return name.toLowerCase().indexOf(match) !== -1
+    }) : data.gpus
+    hardwareLabel = matches.length === 1 ? matches[0]
+      : data.gpus.length === 0 ? "No GPU detected"
+      : match && matches.length === 0 ? "Configured GPU not found"
+      : data.gpus.length + " GPUs (selection unclear)"
   }
 
   function request(argv) {
@@ -214,6 +230,20 @@ QtObject {
         root.catalogError = ""
         root.metadataUpdated()
       } catch (failure) { root.catalogError = root.cleanError(failure) }
+    }
+  }
+  property Process hardwareProcess: Process {
+    command: [root.controlPath, "hardware"]
+    stdout: StdioCollector { id: hardwareOutput; waitForEnd: true }
+    stderr: StdioCollector { id: hardwareErrors; waitForEnd: true }
+    onExited: function(code) {
+      try {
+        if (code !== 0) throw new Error(String(hardwareErrors.text).trim())
+        root.updateHardware(hardwareOutput.text)
+      } catch (failure) {
+        root.hardwareLabel = "GPU unavailable"
+        console.warn("Voxtype hardware:", root.cleanError(failure))
+      }
     }
   }
   property Process applyProcess: Process {
