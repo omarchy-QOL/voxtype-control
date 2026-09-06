@@ -18,8 +18,8 @@ Ui.SearchableDropdown {
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
 
-    onEntered: root.hasCursor = true
-    onExited: root.hasCursor = false
+    onEntered: root.hovered(true)
+    onExited: root.hovered(false)
     onPressed: function(mouse) {
       if (root.popupOpen) root.close()
       mouse.accepted = true

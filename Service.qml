@@ -5,256 +5,226 @@ import Quickshell.Io
 QtObject {
   id: root
 
-  property string dictationState: "unavailable"
-  property string backend: "unknown"
-  property string model: ""
-  property string precision: ""
-  property string device: ""
-  property string language: "auto"
-  property var backendOptions: []
-  property var languagesByBackend: ({
-    canary: ["auto"],
-    parakeet: ["auto"]
-  })
-  property bool available: false
-  property bool endpointReady: false
-  property bool controlAvailable: false
+  property string polledState: "unavailable"
+  property string followerState: "unknown"
   property bool followerHealthy: false
-  property bool metadataReady: false
-  property bool busy: false
+  readonly property string dictationState: followerHealthy ? followerState : polledState
+  property string modelId: ""
+  property string language: ""
+  property string deviceLabel: "Device unreported"
+  property var modelOptions: []
+  readonly property var localModels: modelOptions.filter(function(model) { return model.installed === true })
+  property bool endpointReady: false
+  property bool loaded: false
+  property bool processesActive: false
+  property bool operationBusy: false
+  property bool downloadBusy: false
+  property string operation: ""
   property string error: ""
-
-  signal operationFinished(bool success)
-
-  readonly property string controlPath: Quickshell.env("HOME")
-    + "/.local/bin/voxtype-control"
-  readonly property string configurePath: Quickshell.env("HOME")
-    + "/.local/bin/voxtype-configure-launcher"
-  readonly property string stateLabel:
-    dictationState === "recording" ? "Listening"
+  property string errorOperation: ""
+  property string warning: ""
+  property string warningKind: ""
+  property string statusError: ""
+  property string catalogError: ""
+  property int revision: 0
+  readonly property string controlPath: Quickshell.env("HOME") + "/.local/bin/voxtype-control"
+  readonly property bool busy: applyProcess.running || operationBusy || downloadBusy
+  readonly property bool dictating: ["recording", "transcribing", "streaming", "eager_recording"].indexOf(dictationState) !== -1
+  readonly property bool available: statusError === "" && modelOptions.length > 0
+  readonly property bool controlAvailable: available && catalogError === ""
+  readonly property string modelLabel: !loaded ? "No model" : modelFor(modelId) ? modelFor(modelId).label : "Unknown model"
+  readonly property string message: statusError || catalogError || error || warning
+  readonly property bool messageIsWarning: !statusError && !catalogError && !error && warning !== ""
+  readonly property string stateLabel: busy ? (downloadBusy || (applyProcess.running && operation === "download") ? "Installing" : "Switching")
+    : dictationState === "recording" ? "Listening"
     : dictationState === "transcribing" ? "Transcribing"
-    : dictationState === "idle" ? "Ready"
-    : dictationState === "stopped" ? "Stopped"
-    : "Unavailable"
-  readonly property string backendLabel:
-    backend === "parakeet" ? "Parakeet"
-    : backend === "canary" ? "Canary"
-    : "Unknown backend"
-  readonly property string modelLabel: model !== "" ? model : "No model"
-  readonly property string tooltip: alignedTooltip()
+    : dictationState === "streaming" ? "Streaming"
+    : !processesActive ? "Unloaded"
+    : endpointReady ? "Ready" : "Unavailable"
 
-  function padRight(value, width) {
-    var text = String(value)
-    while (text.length < width) text += "\u00a0"
-    return text
+  signal metadataUpdated()
+  signal actionFinished(string action, bool success)
+
+  function cleanError(raw) {
+    return String(raw || "").trim().replace(/^(?:(?:Error|voxtype-control):\s*)+/i, "")
   }
 
-  function alignedTooltip() {
-    var first = error !== "" ? error
-      : stateLabel + " | " + backendLabel
-        + (language !== "" ? " | " + languageLabel(language) : "")
-    var lines = [
-      first,
-      modelLabel,
-      "Left click: controls | Right click: Voxtype TUI"
-    ]
-    var width = 0
-    for (var i = 0; i < lines.length; i++)
-      width = Math.max(width, lines[i].length)
-    for (var j = 0; j < lines.length; j++)
-      lines[j] = padRight(lines[j], width)
-    return lines.join("\n")
+  function clearWarning() {
+    warning = ""
+    warningKind = ""
+    warningTimer.stop()
   }
 
-  function languageLabel(code) {
-    var labels = {
-      auto: "Automatic",
-      bg: "Bulgarian",
-      hr: "Croatian",
-      cs: "Czech",
-      da: "Danish",
-      nl: "Dutch",
-      en: "English",
-      et: "Estonian",
-      fi: "Finnish",
-      fr: "French",
-      de: "German",
-      el: "Greek",
-      hu: "Hungarian",
-      it: "Italian",
-      lv: "Latvian",
-      lt: "Lithuanian",
-      mt: "Maltese",
-      pl: "Polish",
-      pt: "Portuguese",
-      ro: "Romanian",
-      ru: "Russian",
-      sk: "Slovak",
-      sl: "Slovenian",
-      es: "Spanish",
-      sv: "Swedish",
-      uk: "Ukrainian"
+  function warn(text, kind) {
+    warning = text
+    warningKind = kind || ""
+    warningTimer.restart()
+  }
+
+  function reportFailure(raw, action) {
+    var text = cleanError(raw) || "Operation failed"
+    if (text === "Finish dictation before switching models")
+      warn("Stop dictation before applying changes.", "dictation")
+    else if (text === "Voxtype is busy switching or recording")
+      warn("Voxtype is busy. Try again when it is ready.", "busy")
+    else { error = text; errorOperation = action || operation }
+  }
+
+  function resolveFailure(action) {
+    var runtimeActions = ["apply", "unload"]
+    if (errorOperation === action || (runtimeActions.indexOf(action) !== -1
+        && runtimeActions.indexOf(errorOperation) !== -1)) {
+      error = ""
+      errorOperation = ""
     }
-    return labels[String(code)] || String(code).toUpperCase()
   }
 
-  function languageCodesFor(backendName) {
-    var values = languagesByBackend[String(backendName)]
-    if (values instanceof Array && values.length > 0) return values
-    return ["auto"]
-  }
-
-  function languageOptionsFor(backendName) {
-    var codes = languageCodesFor(backendName)
-    var options = []
-    for (var i = 0; i < codes.length; i++) {
-      var code = codes[i]
-      var detail = code === "auto"
-        ? (backendName === "canary"
-          ? "Detect English or German"
-          : "Use the model's automatic routing")
-        : code.toUpperCase()
-      options.push({
-        value: code,
-        label: languageLabel(code),
-        description: detail
-      })
+  function finishAction(success, raw) {
+    if (!success) reportFailure(raw, operation)
+    else {
+      resolveFailure(operation)
+      clearWarning()
     }
-    return options
+    actionFinished(operation, success)
   }
 
-  function scheduleMetadataRetry() {
-    if (!metadataRetry.running) metadataRetry.start()
+  onDictatingChanged: if (!dictating && warningKind === "dictation") clearWarning()
+
+  property Timer warningTimer: Timer {
+    interval: 10000
+    onTriggered: root.clearWarning()
+  }
+
+  function modelFor(identity) {
+    for (var i = 0; i < modelOptions.length; i++)
+      if (modelOptions[i].value === identity) return modelOptions[i]
+    return null
+  }
+
+  function languageOptionsFor(identity) {
+    var entry = modelFor(identity)
+    return entry ? entry.codes.map(function(code) {
+      return { value: code, label: code === "auto" ? "Automatic"
+        : code === "en" ? "English" : code === "de" ? "German" : code.toUpperCase() }
+    }) : []
+  }
+
+  function defaultLanguageFor(identity) {
+    var entry = modelFor(identity)
+    if (!entry) return ""
+    if (identity === modelId && entry.codes.indexOf(language) !== -1) return language
+    return entry.codes.length === 1 ? entry.codes[0]
+      : entry.codes.indexOf("auto") !== -1 ? "auto" : ""
+  }
+
+  function updateStatus(raw) {
+    var data = JSON.parse(String(raw))
+    if (data.schema !== 3) throw new Error("Install the current Voxtype helper")
+    modelId = String(data.model_id || "")
+    language = String(data.language || "")
+    polledState = String(data.state || "unknown")
+    endpointReady = data.endpoint_ready === true
+    loaded = data.loaded === true
+    deviceLabel = String(data.device_label || "Device unreported")
+    processesActive = data.processes_active === true
+    operationBusy = data.busy === true
+    var wasDownloading = downloadBusy
+    downloadBusy = data.download_busy === true
+    if (wasDownloading && !downloadBusy) refreshMetadata()
+    statusError = ""
+    metadataUpdated()
+  }
+
+  function refreshStatus() {
+    if (statusProcess.running) return
+    statusProcess.epoch = revision
+    statusProcess.running = true
   }
 
   function updateFollower(raw) {
     try {
-      var data = JSON.parse(String(raw || "{}"))
-      var next = String(data.alt || data.class || "idle")
-      if (["idle", "recording", "transcribing", "stopped"]
-          .indexOf(next) === -1)
-        next = "idle"
-      dictationState = next
-      followerHealthy = true
-      if (next === "stopped" || !metadataReady || !endpointReady)
-        scheduleMetadataRetry()
-    } catch (parseError) {
-      error = "Voxtype returned invalid status data."
-    }
-  }
-
-  function updateMetadata(raw) {
-    var data
-    try {
-      data = JSON.parse(String(raw || "{}"))
-    } catch (parseError) {
-      error = "Voxtype control returned invalid metadata."
-      metadataReady = false
-      scheduleMetadataRetry()
-      return false
-    }
-
-    available = data.available === true
-    endpointReady = data.endpoint_ready === true
-    controlAvailable = data.control_available === true
-    backend = String(data.backend || "unknown")
-    model = String(data.model || "")
-    precision = String(data.precision || "")
-    device = String(data.device || "")
-    language = String(data.language || "auto")
-    backendOptions = data.backend_options instanceof Array
-      ? data.backend_options : []
-    if (data.languages_by_backend
-        && typeof data.languages_by_backend === "object")
-      languagesByBackend = data.languages_by_backend
-    if (!followerHealthy)
-      dictationState = String(data.state || (available ? "stopped" : "unavailable"))
-    metadataReady = true
-    error = String(data.error || "")
-    if (endpointReady) metadataRetry.stop()
-    else scheduleMetadataRetry()
-    return true
+      var state = JSON.parse(String(raw)).alt
+      followerHealthy = typeof state === "string" && state !== ""
+      followerState = followerHealthy ? state : "unknown"
+    } catch (error) { followerHealthy = false }
   }
 
   function refreshMetadata() {
-    if (metadataProcess.running) return
-    metadataProcess.command = [controlPath, "status"]
-    metadataProcess.running = true
+    if (!catalogProcess.running) catalogProcess.running = true
+    refreshStatus()
   }
 
-  function applySelection(nextBackend, nextLanguage) {
-    if (busy) return false
-    busy = true
-    error = ""
-    applyProcess.command = [
-      controlPath, "apply", String(nextBackend), String(nextLanguage)
-    ]
+  function request(argv) {
+    if (busy) { warn("Voxtype is busy. Try again when it is ready.", "busy"); return }
+    if (dictating && ["apply", "unload"].indexOf(argv[0]) !== -1) {
+      warn("Stop dictation before applying changes.", "dictation")
+      return
+    }
+    revision++
+    clearWarning()
+    operation = argv[0]
+    applyProcess.command = [controlPath].concat(argv)
     applyProcess.running = true
-    return true
   }
 
-  property Timer metadataRetry: Timer {
-    interval: 5000
-    repeat: false
-    onTriggered: root.refreshMetadata()
-  }
+  function applySelection(identity, language) { request(["apply", identity, language]) }
+  function unload() { request(["unload"]) }
 
-  property Process followerProcess: Process {
+  property Timer poll: Timer {
+    interval: root.busy ? 500 : 5000
+    running: true
+    repeat: true
+    onTriggered: {
+      root.refreshStatus()
+      if (root.catalogError && !root.catalogProcess.running) root.catalogProcess.running = true
+      if (!root.follower.running) root.follower.running = true
+    }
+  }
+  property Process follower: Process {
     command: ["omarchy-voxtype-status"]
     running: true
     stdout: SplitParser {
       onRead: function(line) { root.updateFollower(line) }
     }
-    onExited: function() {
-      root.followerHealthy = false
-      root.refreshMetadata()
-      followerRestart.restart()
+    onExited: root.followerHealthy = false
+  }
+  property Process statusProcess: Process {
+    property int epoch: 0
+    command: [root.controlPath, "status"]
+    stdout: StdioCollector { id: statusOutput; waitForEnd: true }
+    stderr: StdioCollector { id: statusErrors; waitForEnd: true }
+    onExited: function(code) {
+      if (epoch !== root.revision) return
+      try {
+        if (code !== 0) throw new Error(String(statusErrors.text).trim())
+        root.updateStatus(statusOutput.text)
+      } catch (failure) { root.statusError = root.cleanError(failure) }
     }
   }
-
-  property Timer followerRestart: Timer {
-    interval: 5000
-    onTriggered: if (!followerProcess.running) followerProcess.running = true
-  }
-
-  property Process metadataProcess: Process {
-    stdout: StdioCollector {
-      id: metadataStdout
-      waitForEnd: true
-    }
-    stderr: StdioCollector {
-      id: metadataStderr
-      waitForEnd: true
-    }
-    onExited: function(exitCode) {
-      if (exitCode === 0 && root.updateMetadata(metadataStdout.text)) return
-      root.metadataReady = false
-      root.controlAvailable = false
-      root.error = String(metadataStderr.text || "").trim()
-        || "Voxtype control is unavailable."
-      root.scheduleMetadataRetry()
+  property Process catalogProcess: Process {
+    command: [root.controlPath, "list"]
+    stdout: StdioCollector { id: catalogOutput; waitForEnd: true }
+    stderr: StdioCollector { id: catalogErrors; waitForEnd: true }
+    onExited: function(code) {
+      try {
+        if (code !== 0) throw new Error(String(catalogErrors.text).trim())
+        var entries = JSON.parse(String(catalogOutput.text))
+        if (!(entries instanceof Array)) throw new Error("Invalid model catalog")
+        root.modelOptions = entries
+        root.catalogError = ""
+        root.metadataUpdated()
+      } catch (failure) { root.catalogError = root.cleanError(failure) }
     }
   }
-
   property Process applyProcess: Process {
-    stdout: StdioCollector {
-      id: applyStdout
-      waitForEnd: true
-    }
-    stderr: StdioCollector {
-      id: applyStderr
-      waitForEnd: true
-    }
-    onExited: function(exitCode) {
-      root.busy = false
-      if (exitCode === 0 && root.updateMetadata(applyStdout.text)) {
-        root.operationFinished(true)
-        return
-      }
-      root.error = String(applyStderr.text || "").trim()
-        || "Could not apply the Voxtype selection."
-      root.operationFinished(false)
-      root.refreshMetadata()
+    stderr: StdioCollector { id: applyErrors; waitForEnd: true }
+    onExited: function(code) {
+      root.operationBusy = false
+      root.downloadBusy = false
+      root.finishAction(code === 0, applyErrors.text)
+      if (root.operation === "download") {
+        root.refreshMetadata()
+      } else root.refreshStatus()
     }
   }
 
