@@ -6,6 +6,7 @@ const source = fs.readFileSync(new URL("../Service.qml", import.meta.url), "utf8
 const context = vm.createContext({ metadataUpdated() {}, refreshMetadata() {},
   applyProcess: {}, busy: false, dictating: false, downloadBusy: false, followerHealthy: false, revision: 0,
   warningTimer: { restart() {}, stop() {} }, actionFinished() {}, errorOperation: "",
+  reloadState: "", readyTimer: { restart() {}, stop() {} },
   modelOptions: [
     { value: "parakeet", codes: ["auto"], reason: "" },
     { value: "canary", codes: ["en", "de"], reason: "" },
@@ -17,6 +18,7 @@ for (const name of ["modelFor", "languageOptionsFor", "defaultLanguageFor", "upd
   assert.ok(code, name);
   vm.runInContext(code, context);
 }
+Object.defineProperty(context, "reloading", {get: () => context.reloadState !== ""});
 assert.equal(context.defaultLanguageFor("parakeet"), "auto");
 assert.equal(context.defaultLanguageFor("canary"), "");
 assert.equal(context.defaultLanguageFor("moonshine"), "ja");
@@ -263,6 +265,19 @@ assert.ok(widget.indexOf("NoticeSection {") < widget.indexOf('label: "Speech mod
 console.log("ok - row/column movement, all-control Tab cycle, and unload-only picker");
 
 const stateColor = widget.match(/readonly property color stateColor:([^]*?)\n  readonly/)[1];
+const iconColor = widget.match(/readonly property color statusColor:([^]*?)\n  readonly/)[1];
+const iconState = vm.createContext({voxtype: {dictationState: "idle", available: true,
+  reloading: true, readyFlash: false}, urgent: "red", warning: "yellow",
+  ready: "green", foreground: "white", dim: "grey"});
+assert.equal(vm.runInContext(iconColor, iconState), "yellow");
+iconState.voxtype.reloading = false;
+iconState.voxtype.readyFlash = true;
+assert.equal(vm.runInContext(iconColor, iconState), "green");
+iconState.voxtype.dictationState = "recording";
+assert.equal(vm.runInContext(iconColor, iconState), "red");
+iconState.voxtype.dictationState = "idle";
+iconState.voxtype.readyFlash = false;
+assert.equal(vm.runInContext(iconColor, iconState), "white");
 const status = vm.createContext({ voxtype: { stateLabel: "Ready" }, ready: "green", warning: "yellow", urgent: "red" });
 assert.equal(vm.runInContext(stateColor, status), "green");
 for (const label of ["Switching", "Installing", "Transcribing", "Unavailable", "Unloaded"]) {

@@ -25,6 +25,11 @@ pre-action poll responses. Hardware refresh runs at startup and on metadata
 refresh, not on each status poll. A unique configured GPU match is required
 on multi-GPU hosts; hardware presence does not establish inference acceleration.
 
+Apply feedback belongs to the shared service, not the panel. A fresh
+post-completion status confirms readiness before the one-second green flash.
+The glyph uses Keyboard Layout Pulse's 650 ms opacity/scale animation; failures
+reset it without a success flash. Feedback never gates model usability.
+
 ## Notices and replacements
 
 Safety rejections are temporary warnings. A failed command exiting does not
