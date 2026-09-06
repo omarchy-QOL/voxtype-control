@@ -93,6 +93,16 @@ with simulated failures and no model operations.
 
 ## Installation
 
+The controller is a separate prerequisite and is not included in this
+repository. Installing this plugin alone does not install Voxtype, its helper,
+or speech models.
+
+Once the schema-4 helper is available:
+
+```bash
+omarchy plugin add https://github.com/omarchy-QOL/voxtype-control
+```
+
 Install the helper with `apps/voxtype-setup/setup_voxtype.sh`. Keep the plugin
 as an actual Git checkout or worktree at:
 

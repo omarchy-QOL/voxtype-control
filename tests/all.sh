@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
 omarchy plugin validate "$ROOT"
 qt_tools=/usr/lib/qt6/bin
 shell_root="${OMARCHY_PATH:-/usr/share/omarchy}/shell"
