@@ -207,7 +207,7 @@ console.log("ok - fuzzy search, installed-only selector, and cancel without inst
 
 assert.ok(controls.includes("controlRows: [[backendDropdown, unloadButton]"));
 assert.ok(controls.includes("readonly property var actions: [].concat.apply([], controlRows)"));
-assert.ok(controls.includes('text: "h/j/k/l: move"'));
+assert.ok(!controls.includes('text: "h/j/k/l: move"'));
 assert.ok(controls.includes('text: "Settings"'));
 assert.ok(controls.includes('text: "Replacements"'));
 assert.ok(controls.includes('text: "Transcripts"'));

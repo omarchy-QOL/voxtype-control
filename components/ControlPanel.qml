@@ -406,25 +406,15 @@ KeyboardPanel {
                 }
             }
 
-            Row {
+            Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                spacing: Style.space(16)
-                Text {
-                    text: "h/j/k/l: move"
-                    color: root.dim
-                    font.family: root.bar ? root.bar.fontFamily : Style.font.family
-                    font.pixelSize: Style.font.caption
-                    font.bold: true
-                }
-                Text {
-                    text: "[v] tui  [s]ettings  [r]eplacements  [t]ranscripts"
-                    textFormat: Text.PlainText
-                    color: root.dim
-                    font.family: root.bar ? root.bar.fontFamily : Style.font.family
-                    font.pixelSize: Style.font.caption
-                    font.bold: true
-                    font.letterSpacing: 0.8
-                }
+                text: "[v] tui  [s]ettings  [r]eplacements  [t]ranscripts"
+                textFormat: Text.PlainText
+                color: root.dim
+                font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                font.pixelSize: Style.font.caption
+                font.bold: true
+                font.letterSpacing: 0.8
             }
         }
     }
