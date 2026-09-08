@@ -229,7 +229,6 @@ KeyboardPanel {
                 width: parent.width
                 service: root.voxtype
                 foreground: root.foreground || Color.foreground
-                dim: Qt.darker(root.foreground || Color.foreground, 1.55)
                 stateColor: root.stateColor || root.foreground || Color.foreground
                 statusColor: root.statusColor || root.foreground || Color.foreground
                 statusIcon: root.statusIcon
