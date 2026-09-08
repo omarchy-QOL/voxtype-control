@@ -227,9 +227,9 @@ KeyboardPanel {
             StatusHeader {
                 width: parent.width
                 service: root.voxtype
-                foreground: root.foreground || Color.foreground
+                foreground: root.foreground
                 ready: root.ready
-                statusColor: root.statusColor || root.foreground || Color.foreground
+                statusColor: root.statusColor
                 statusIcon: root.statusIcon
                 fontFamily: root.fontFamily
             }

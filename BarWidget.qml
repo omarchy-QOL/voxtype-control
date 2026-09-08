@@ -14,9 +14,10 @@ Panel {
 
     property bool editingReplacements: false
     readonly property var voxtype: bar && bar.shell ? bar.shell.serviceFor(moduleName) : null
-    readonly property color foreground: bar ? bar.barForeground : Color.foreground
+    readonly property color foreground:
+        bar && bar.barForeground ? bar.barForeground : Color.foreground
     readonly property color dim: Qt.darker(foreground, 1.55)
-    readonly property color urgent: bar ? bar.urgent : Color.urgent
+    readonly property color urgent: bar && bar.urgent ? bar.urgent : Color.urgent
     readonly property color ready: stateColors.ready
     readonly property color warning: stateColors.warning
     readonly property color statusColor: voxtype && voxtype.dictationState === "recording" ? urgent : voxtype && voxtype.reloading ? warning : voxtype && voxtype.readyFlash ? ready : voxtype && voxtype.dictationState === "transcribing" ? warning : voxtype && voxtype.available ? foreground : dim
