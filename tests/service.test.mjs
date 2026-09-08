@@ -310,7 +310,7 @@ for (const label of ["Switching", "Installing", "Transcribing", "Unavailable", "
 }
 status.voxtype.stateLabel = "Listening";
 assert.equal(vm.runInContext(stateColor, status), "white");
-assert.ok(widget.includes("stateColor: root.stateColor"));
+assert.equal(widget.match(/stateColor: root\.stateColor/g).length, 2);
 assert.ok(controls.includes("property color stateColor: foreground"));
 assert.ok(controls.includes("stateColor: root.stateColor"));
 assert.ok(!widget.match(/#[0-9a-fA-F]{6}/));

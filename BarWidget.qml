@@ -126,6 +126,7 @@ Panel {
         urgent: root.urgent
         ready: root.ready
         warning: root.warning
+        stateColor: root.stateColor
         statusColor: root.statusColor
         statusIcon: root.statusIcon
         fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
