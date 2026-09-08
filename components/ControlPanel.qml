@@ -229,7 +229,6 @@ KeyboardPanel {
                 foreground: root.foreground
                 ready: root.ready
                 urgent: root.urgent
-                warning: root.warning
                 statusIcon: root.statusIcon
                 fontFamily: root.fontFamily
             }
