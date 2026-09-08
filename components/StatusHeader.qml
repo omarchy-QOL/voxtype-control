@@ -9,9 +9,16 @@ Item {
   property color foreground: Color.foreground
   property color dim: Qt.darker(foreground, 1.55)
   property color ready: Color.accent
+  property color urgent: Color.urgent
+  property color warning: Color.urgent
   readonly property color stateColor:
     service && service.stateLabel === "Ready" ? ready : foreground
-  property color statusColor: Color.foreground
+  readonly property color statusColor:
+    service && service.dictationState === "recording" ? urgent
+    : service && service.reloading ? warning
+    : service && service.readyFlash ? ready
+    : service && service.dictationState === "transcribing" ? warning
+    : foreground
   property string statusIcon: "󰍬"
   property string fontFamily: Style.font.family
   implicitHeight: Math.max(titleBlock.implicitHeight, modelBox.implicitHeight)

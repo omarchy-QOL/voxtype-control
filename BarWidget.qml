@@ -127,7 +127,6 @@ Panel {
         urgent: root.urgent
         ready: root.ready
         warning: root.warning
-        statusColor: root.statusColor
         statusIcon: root.statusIcon
         fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
         onCloseRequested: root.close()
