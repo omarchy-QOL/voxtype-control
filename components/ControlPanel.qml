@@ -15,7 +15,6 @@ KeyboardPanel {
     property color urgent: Color.urgent
     property color ready: Color.accent
     property color warning: Color.urgent
-    property color stateColor: foreground
     property color statusColor: foreground
     property string statusIcon: "󰍬"
     property string fontFamily: Style.font.family
@@ -229,7 +228,7 @@ KeyboardPanel {
                 width: parent.width
                 service: root.voxtype
                 foreground: root.foreground || Color.foreground
-                stateColor: root.stateColor || root.foreground || Color.foreground
+                ready: root.ready
                 statusColor: root.statusColor || root.foreground || Color.foreground
                 statusIcon: root.statusIcon
                 fontFamily: root.fontFamily

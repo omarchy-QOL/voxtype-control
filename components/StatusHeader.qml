@@ -8,7 +8,9 @@ Item {
   required property var service
   property color foreground: Color.foreground
   property color dim: Qt.darker(foreground, 1.55)
-  property color stateColor: Color.foreground
+  property color ready: Color.accent
+  readonly property color stateColor:
+    service && service.stateLabel === "Ready" ? ready : foreground
   property color statusColor: Color.foreground
   property string statusIcon: "󰍬"
   property string fontFamily: Style.font.family

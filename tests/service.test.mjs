@@ -87,6 +87,8 @@ assert.equal(context.error, "");
 
 const widget = fs.readFileSync(new URL("../BarWidget.qml", import.meta.url), "utf8");
 const controls = fs.readFileSync(new URL("../components/ControlPanel.qml", import.meta.url), "utf8");
+const statusHeader = fs.readFileSync(
+  new URL("../components/StatusHeader.qml", import.meta.url), "utf8");
 function qmlFunction(source, name) {
   const start = source.indexOf(`function ${name}(`);
   assert.notEqual(start, -1, name);
@@ -310,9 +312,9 @@ for (const label of ["Switching", "Installing", "Transcribing", "Unavailable", "
 }
 status.voxtype.stateLabel = "Listening";
 assert.equal(vm.runInContext(stateColor, status), "white");
-assert.equal(widget.match(/stateColor: root\.stateColor/g).length, 2);
-assert.ok(controls.includes("property color stateColor: foreground"));
-assert.ok(controls.includes("stateColor: root.stateColor"));
+assert.equal(widget.match(/stateColor: root\.stateColor/g).length, 1);
+assert.ok(statusHeader.includes('service.stateLabel === "Ready" ? ready : foreground'));
+assert.ok(controls.includes("ready: root.ready"));
 assert.ok(!widget.match(/#[0-9a-fA-F]{6}/));
 console.log("ok - shared panel/tooltip state colour and no hardcoded palette");
 
