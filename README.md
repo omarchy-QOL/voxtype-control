@@ -28,7 +28,7 @@ omarchy plugin add https://github.com/omarchy-QOL/voxtype-control --enable
 - Select **×** to unload the current model. Its files stay on disk.
 - Select **Transcripts** to search, review, copy, or explicitly delete completed
   dictations. The newest entry is selected; opening and browsing never copy.
-- **Right-click**, or select **Voxtype TUI**, to open Voxtype's terminal menu
+- **Right-click**, or select **TUI**, to open Voxtype's terminal menu
   for model downloads and configuration.
 
 Parakeet v3 recognizes languages automatically. Canary requires **English** or
@@ -56,7 +56,7 @@ Inside the panel:
 | Arrows or `h/j/k/l` | Move between controls     |
 | `Tab` / `Shift+Tab` | Next / previous control   |
 | `Enter`             | Activate or open search   |
-| `v`                 | Open Voxtype TUI          |
+| `v`                 | Open TUI                  |
 | `s`                 | Open settings             |
 | `r`                 | Edit replacements         |
 | `t`                 | Open transcript history   |

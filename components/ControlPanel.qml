@@ -25,7 +25,7 @@ KeyboardPanel {
     property bool unloadingModel: false
     property bool showingHistory: false
     readonly property var controlRows: [[backendDropdown, unloadButton], [languageDropdown],
-        [applyButton], [configureButton, configFileButton], [replacementsButton, historyButton]]
+        [applyButton], [configureButton, configFileButton, replacementsButton, historyButton]]
     readonly property var actions: [].concat.apply([], controlRows)
     readonly property var languageOptions: voxtype ? voxtype.languageOptionsFor(draftModelId) : []
     readonly property var selectedModel: voxtype ? voxtype.modelFor(draftModelId) : null
@@ -345,14 +345,13 @@ KeyboardPanel {
 
                 Button {
                     id: configureButton
-                    width: (parent.width - parent.spacing) / 2
-                    text: "Voxtype TUI"
+                    width: (parent.width - 3 * parent.spacing) / 4
+                    text: "TUI"
                     hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(configureButton)
                     onHovered: function (hovered) {
                         if (hovered)
                             root.actionIndex = root.actions.indexOf(configureButton);
                     }
-                    iconText: "󰒓"
                     enabled: root.voxtype && root.voxtype.controlAvailable && !root.voxtype.busy
                     bordered: true
                     foreground: root.foreground
@@ -369,29 +368,22 @@ KeyboardPanel {
                         if (hovered)
                             root.actionIndex = root.actions.indexOf(configFileButton);
                     }
-                    iconText: "󰷈"
                     enabled: root.voxtype !== null
                     bordered: true
                     foreground: root.foreground
                     fontFamily: root.fontFamily
                     onClicked: root.configFileRequested()
                 }
-            }
-
-            Row {
-                width: parent.width
-                spacing: Style.space(6)
 
                 Button {
                     id: replacementsButton
-                    width: (parent.width - parent.spacing) / 2
+                    width: configureButton.width
                     text: "Replacements"
                     hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(replacementsButton)
                     onHovered: function (hovered) {
                         if (hovered)
                             root.actionIndex = root.actions.indexOf(replacementsButton);
                     }
-                    iconText: "󰛔"
                     enabled: root.voxtype && root.voxtype.controlAvailable && !root.voxtype.busy
                     bordered: true
                     foreground: root.foreground
@@ -401,14 +393,13 @@ KeyboardPanel {
 
                 Button {
                     id: historyButton
-                    width: replacementsButton.width
+                    width: configureButton.width
                     text: "Transcripts"
                     hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(historyButton)
                     onHovered: function (hovered) {
                         if (hovered)
                             root.actionIndex = root.actions.indexOf(historyButton);
                     }
-                    iconText: "󰈙"
                     enabled: root.voxtype && root.voxtype.history
                     bordered: true
                     foreground: root.foreground
@@ -428,7 +419,7 @@ KeyboardPanel {
                     font.bold: true
                 }
                 Text {
-                    text: "[v]oxtype  [s]ettings  [r]eplacements  [t]ranscripts"
+                    text: "[v] tui  [s]ettings  [r]eplacements  [t]ranscripts"
                     textFormat: Text.PlainText
                     color: root.dim
                     font.family: root.bar ? root.bar.fontFamily : Style.font.family

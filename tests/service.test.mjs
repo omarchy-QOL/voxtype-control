@@ -163,7 +163,7 @@ launch.launchConfiguration();
 assert.equal(launch.launched.join(" "), "omarchy-launch-terminal -e /test/voxtype-control configure");
 assert.ok(controls.includes('id: unloadButton'));
 assert.ok(controls.includes('tooltipText: "Unload current model; keep its files"'));
-assert.ok(controls.includes('text: "Voxtype TUI"'));
+assert.ok(controls.includes('text: "TUI"'));
 console.log("ok - language policies, draft validation, state and process requests");
 
 const models = [
@@ -209,7 +209,8 @@ assert.ok(controls.includes('text: "h/j/k/l: move"'));
 assert.ok(controls.includes('text: "Settings"'));
 assert.ok(controls.includes('text: "Replacements"'));
 assert.ok(controls.includes('text: "Transcripts"'));
-assert.ok(controls.includes('text: "[v]oxtype  [s]ettings  [r]eplacements  [t]ranscripts"'));
+assert.ok(controls.includes('text: "[v] tui  [s]ettings  [r]eplacements  [t]ranscripts"'));
+assert.ok(controls.includes("[configureButton, configFileButton, replacementsButton, historyButton]"));
 launch.editorLauncher = {};
 launch.editingReplacements = false;
 launch.ipcTarget = "voxtype.editor.DP-3";
@@ -232,8 +233,8 @@ let closes = 0;
 const shortcuts = vm.createContext({ root: {
     closeRequested() { closes++; }, actionIndex: 0,
     actions: ["model", "unload", "language", "apply", "tui", "settings", "replacements", "history"],
-    controlRows: [["model", "unload"], ["language"], ["apply"], ["tui", "settings"],
-      ["replacements", "history"]], focusControls() {},
+    controlRows: [["model", "unload"], ["language"], ["apply"],
+      ["tui", "settings", "replacements", "history"]], focusControls() {},
   }, configureButton: button, configFileButton: button,
   replacementsButton: button, historyButton: button,
   backendDropdown: { close() {} }, languageDropdown: { close() {} } });
@@ -274,13 +275,15 @@ assert.equal(shortcuts.root.actionIndex, 4);
 shortcuts.moveCursor(1, 0);
 assert.equal(shortcuts.root.actionIndex, 5);
 shortcuts.moveCursor(1, 0);
-assert.equal(shortcuts.root.actionIndex, 4);
-shortcuts.moveCursor(0, 1);
 assert.equal(shortcuts.root.actionIndex, 6);
 shortcuts.moveCursor(1, 0);
 assert.equal(shortcuts.root.actionIndex, 7);
+shortcuts.moveCursor(1, 0);
+assert.equal(shortcuts.root.actionIndex, 4);
+shortcuts.moveCursor(-1, 0);
+assert.equal(shortcuts.root.actionIndex, 7);
 shortcuts.moveCursor(0, -1);
-assert.equal(shortcuts.root.actionIndex, 5);
+assert.equal(shortcuts.root.actionIndex, 3);
 assert.ok(controls.indexOf("NoticeSection {") < controls.indexOf('label: "Speech model"'));
 console.log("ok - row/column movement, all-control Tab cycle, and unload-only picker");
 
@@ -298,14 +301,15 @@ assert.equal(vm.runInContext(iconColor, iconState), "red");
 iconState.voxtype.dictationState = "idle";
 iconState.voxtype.readyFlash = false;
 assert.equal(vm.runInContext(iconColor, iconState), "white");
-const status = vm.createContext({ voxtype: { stateLabel: "Ready" }, ready: "green", warning: "yellow", urgent: "red" });
+const status = vm.createContext({ voxtype: { stateLabel: "Ready" }, ready: "green",
+  foreground: "white" });
 assert.equal(vm.runInContext(stateColor, status), "green");
 for (const label of ["Switching", "Installing", "Transcribing", "Unavailable", "Unloaded"]) {
   status.voxtype.stateLabel = label;
-  assert.equal(vm.runInContext(stateColor, status), "yellow");
+  assert.equal(vm.runInContext(stateColor, status), "white");
 }
 status.voxtype.stateLabel = "Listening";
-assert.equal(vm.runInContext(stateColor, status), "red");
+assert.equal(vm.runInContext(stateColor, status), "white");
 assert.ok(widget.includes("stateColor: root.stateColor"));
 assert.ok(!widget.match(/#[0-9a-fA-F]{6}/));
 console.log("ok - shared panel/tooltip state colour and no hardcoded palette");
