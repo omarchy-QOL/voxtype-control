@@ -3,6 +3,8 @@ import QtTest
 import qs.Commons
 import qs.Ui
 import "../.." as Plugin
+import "../../components" as Components
+import "../../history" as History
 
 TestCase {
   id: test
@@ -16,11 +18,16 @@ TestCase {
   property int unloadCalls: 0
   property int underlyingActivations: 0
   property int statusRefreshes: 0
+  property int historyRefreshes: 0
+  property int historyCopies: 0
+  property int historyDeletes: 0
+  property int historyClears: 0
+  property string historyQuery: ""
   property alias fixtureService: service
   property var controlRows: [[dropdown, notice], [tooltip]]
   readonly property var actions: [].concat.apply([], controlRows)
 
-  Plugin.ApplySelectionButton {
+  Components.ApplySelectionButton {
     id: applyButton
     visible: false
     width: 400
@@ -66,7 +73,7 @@ TestCase {
       active: false
       width: item ? Math.min(Style.space(440), item.implicitWidth) : 320
       sourceComponent: Component {
-        Plugin.UnloadModel {
+        Components.UnloadModel {
           service: test.fixtureService
           onCancelled: unloadPicker.active = false
         }
@@ -74,7 +81,27 @@ TestCase {
     }
   }
 
-  Plugin.NoticeSection {
+  History.TranscriptHistory {
+    id: historyView
+    visible: false
+    width: 440
+    service: historyFixture
+  }
+
+  QtObject {
+    id: historyFixture
+    property var entries: []
+    property bool busy: false
+    property string error: ""
+    property string warning: ""
+    property string notice: ""
+    function refresh(query) { test.historyRefreshes++; test.historyQuery = query }
+    function copy(id) { test.historyCopies++; test.historyQuery = id }
+    function remove(id) { test.historyDeletes++; test.historyQuery = id }
+    function clear() { test.historyClears++ }
+  }
+
+  Components.NoticeSection {
     id: notice
     width: 320
     message: service.message
@@ -82,7 +109,7 @@ TestCase {
     warningColor: colors.warning
   }
 
-  Plugin.GuardedSearchableDropdown {
+  Components.GuardedSearchableDropdown {
     id: dropdown
     width: 300
     label: "Models"
@@ -137,8 +164,75 @@ TestCase {
     passed++
   }
 
+  function test_history_open_search_and_browse_never_copy() {
+    historyCopies = 0
+    historyRefreshes = 0
+    historyQuery = ""
+    historyFixture.entries = [
+      {id: "new", created_at: "2026-09-08T12:00:00Z", model_id: "model", language: "en",
+        preview: "Newest transcript", text: "Newest transcript"},
+      {id: "old", created_at: "2026-09-08T11:00:00Z", model_id: "model", language: "de",
+        preview: "Older needle", text: "Older needle"}
+    ]
+    historyView.visible = true
+    historyView.selectedId = ""
+    historyView.activate()
+    wait(0)
+    historyView.synchronizeSelection()
+    compare(historyView.selectedId, "new")
+    compare(historyCopies, 0)
+    historyView.moveSelection(1)
+    compare(historyView.selectedId, "old")
+    historyFixture.entries = [
+      {id: "newer", created_at: "2026-09-08T13:00:00Z", model_id: "model",
+        language: "en", preview: "Background entry", text: "Background entry"},
+      {id: "new", created_at: "2026-09-08T12:00:00Z", model_id: "model", language: "en",
+        preview: "Newest transcript", text: "Newest transcript"},
+      {id: "old", created_at: "2026-09-08T11:00:00Z", model_id: "model", language: "de",
+        preview: "Older needle", text: "Older needle"}
+    ]
+    wait(0)
+    compare(historyView.selectedId, "old")
+    compare(historyCopies, 0)
+    var search = findChild(historyView, "transcriptHistorySearch")
+    verify(search !== null)
+    search.forceActiveFocus()
+    keyClick(Qt.Key_N)
+    compare(search.text, "n")
+    wait(220)
+    compare(historyQuery, "n")
+    compare(historyCopies, 0)
+    historyView.visible = false
+    passed++
+  }
+
+  function test_history_copy_and_destructive_confirmations_are_explicit() {
+    historyCopies = 0
+    historyDeletes = 0
+    historyClears = 0
+    historyView.visible = true
+    historyView.selectedId = "old"
+    historyView.copySelected()
+    compare(historyCopies, 1)
+    compare(historyQuery, "old")
+    historyView.requestConfirmation("delete")
+    historyView.confirmChoice = 1
+    historyView.confirm()
+    compare(historyDeletes, 0)
+    historyView.requestConfirmation("delete")
+    historyView.confirmChoice = 0
+    historyView.confirm()
+    compare(historyDeletes, 1)
+    historyView.requestConfirmation("clear")
+    historyView.confirmChoice = 0
+    historyView.confirm()
+    compare(historyClears, 1)
+    historyView.visible = false
+    passed++
+  }
+
   function cleanupTestCase() {
-    if (passed === 19) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 21) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 

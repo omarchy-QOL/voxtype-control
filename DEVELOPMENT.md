@@ -13,6 +13,7 @@ the helper through `apps/voxtype-setup/setup_voxtype.sh`.
   independently of model state.
 - `apply MODEL LANGUAGE` and `unload` wait for the systemd operation to finish.
 - `configure`, `edit-config`, and `edit-replacements` open the existing tools.
+- `history list/show/copy/delete/clear` is independent of model configuration.
 - `omarchy-voxtype-status` supplies the live dictation stream.
 
 The header reports controller state; the model/language draft stays local to
@@ -31,6 +32,33 @@ The glyph keeps the host's optical centering and uses curve rendering to avoid
 native-bitmap artifacts at fractional scales. One eased progress value drives
 an 8% scale pulse and opacity over 500 ms, with no opacity jump between cycles.
 Failures reset it without a success flash. Feedback never gates model usability.
+
+## Structure
+
+Root `BarWidget.qml` and `Service.qml` remain Omarchy host entry points.
+`components/` owns panel presentation, `services/` owns model/controller IO,
+`history/` owns transcript state and UI, and `logic/` contains pure selection
+helpers. The service has one host-managed lifetime; panels remain per screen.
+No second Quickshell process or plugin-local mutable state is created.
+
+## Transcript history
+
+The controller injects a non-streaming passthrough post-processor into its
+disposable effective config. Voxtype supplies text after built-in replacements
+and punctuation; the helper atomically saves it before returning the identical
+UTF-8 text for output. Existing custom/profile post-process commands are
+rejected because wrapping them would otherwise misstate final-text ordering.
+
+History uses one file per entry under XDG state with mode 0600, a mode-0700
+directory, atomic rename, file and directory fsync, and a serialization lock.
+The QML service requests JSON asynchronously with argument arrays. It has no
+model-state dependency. Selection is retained by stable ID across refreshes,
+so a new background entry cannot change the text being reviewed or copied.
+
+Capture failures notify but do not block insertion. Unit tests use synthetic
+text and fake clipboards. Output policy is separately persisted by the helper;
+history deployment does not enable paste. Live insertion acceptance must use
+an isolated, unsent draft and is separate from automated plugin tests.
 
 ## Notices and replacements
 

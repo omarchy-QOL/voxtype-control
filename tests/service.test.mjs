@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
 
-const source = fs.readFileSync(new URL("../Service.qml", import.meta.url), "utf8");
+const source = fs.readFileSync(new URL("../services/ModelControlService.qml", import.meta.url), "utf8");
 const context = vm.createContext({ metadataUpdated() {}, refreshMetadata() {},
   applyProcess: {}, busy: false, dictating: false, downloadBusy: false, followerHealthy: false, revision: 0,
   warningTimer: { restart() {}, stop() {} }, actionFinished() {}, errorOperation: "",
@@ -86,10 +86,23 @@ context.finishAction(true, "");
 assert.equal(context.error, "");
 
 const widget = fs.readFileSync(new URL("../BarWidget.qml", import.meta.url), "utf8");
-const condition = widget.match(/readonly property bool canApply: ([^]*?)\n\n/)[1];
+const controls = fs.readFileSync(new URL("../components/ControlPanel.qml", import.meta.url), "utf8");
+function qmlFunction(source, name) {
+  const start = source.indexOf(`function ${name}(`);
+  assert.notEqual(start, -1, name);
+  const open = source.indexOf("{", start);
+  let depth = 0;
+  for (let index = open; index < source.length; index++) {
+    if (source[index] === "{") depth++;
+    if (source[index] === "}" && --depth === 0) return source.slice(start, index + 1);
+  }
+  throw new Error(`Unclosed QML function: ${name}`);
+}
+const condition = controls.match(/readonly property bool canApply: (.*)/)[1];
 const panel = vm.createContext({ voxtype: { controlAvailable: true, busy: false, dictating: false,
   loaded: true, endpointReady: true, modelId: "canary", language: "en", errorOperation: "" },
   selectedModel: { codes: ["en", "de"], reason: "" }, draftModelId: "canary", draftLanguage: "" });
+panel.root = panel;
 assert.equal(vm.runInContext(condition, panel), false);
 panel.draftLanguage = "de";
 assert.equal(vm.runInContext(condition, panel), true);
@@ -120,7 +133,7 @@ assert.ok(!source.includes("pendingOperation"));
 const submitted = [];
 panel.voxtype.applySelection = (id, language) => submitted.push([id, language]);
 Object.defineProperty(panel, "canApply", {get: () => vm.runInContext(condition, panel)});
-vm.runInContext(widget.match(/  function applyDraft\([^]*?\n  \}/)[0], panel);
+vm.runInContext(qmlFunction(controls, "applyDraft"), panel);
 panel.selectedModel.reason = "";
 panel.voxtype.modelId = "parakeet";
 panel.voxtype.language = "auto";
@@ -135,22 +148,22 @@ for (const loaded of [false, true, false, true]) {
   panel.applyDraft();
   assert.deepEqual(submitted.at(-1), ["canary", "de"]);
 }
-assert.ok(!widget.includes("recover"));
-assert.ok(!widget.includes("Language is controlled by this model."));
-assert.ok(!widget.includes("Choose the language you are speaking."));
-assert.ok(widget.includes('"Load STT model / Apply language selection"'));
-assert.ok(widget.includes("checkColor: root.ready"));
+assert.ok(!controls.includes("recover"));
+assert.ok(!controls.includes("Language is controlled by this model."));
+assert.ok(!controls.includes("Choose the language you are speaking."));
+assert.ok(controls.includes('"Load STT model / Apply language selection"'));
+assert.ok(controls.includes("checkColor: root.ready"));
 assert.ok(!widget.includes("slotSize: Style.bar.statusSlot"));
 const launch = vm.createContext({
   voxtype: { controlPath: "/test/voxtype-control", unload() { throw new Error("TUI must not unload"); } },
   close() {}, Quickshell: { execDetached(argv) { launch.launched = argv; } },
 });
-vm.runInContext(widget.match(/  function launchConfiguration\([^]*?\n  \}/)[0], launch);
+vm.runInContext(qmlFunction(widget, "launchConfiguration"), launch);
 launch.launchConfiguration();
 assert.equal(launch.launched.join(" "), "omarchy-launch-terminal -e /test/voxtype-control configure");
-assert.ok(widget.includes('id: unloadButton'));
-assert.ok(widget.includes('tooltipText: "Unload current model; keep its files"'));
-assert.ok(widget.includes('text: "Voxtype TUI"'));
+assert.ok(controls.includes('id: unloadButton'));
+assert.ok(controls.includes('tooltipText: "Unload current model; keep its files"'));
+assert.ok(controls.includes('text: "Voxtype TUI"'));
 console.log("ok - language policies, draft validation, state and process requests");
 
 const models = [
@@ -161,22 +174,22 @@ context.modelOptions = models;
 const localFilter = source.match(/readonly property var localModels: (.*)/)[1];
 assert.equal(vm.runInContext(localFilter, context).length, 1);
 assert.equal(vm.runInContext(localFilter, context)[0].value, "p");
-const picker = fs.readFileSync(new URL("../UnloadModel.qml", import.meta.url), "utf8");
+const picker = fs.readFileSync(new URL("../components/UnloadModel.qml", import.meta.url), "utf8");
 assert.ok(picker.includes('onCloseRequested: root.cancelled()'));
 assert.ok(picker.includes('service.modelLabel + "?"'));
 assert.ok(picker.includes('property int choice: 1'));
 assert.ok(!picker.includes('TextField'));
 assert.ok(picker.includes('onClicked: root.service.unload()'));
-assert.ok(!widget.includes("addButton") && !source.includes("downloadModel"));
-assert.ok(widget.includes('options: root.voxtype ? root.voxtype.localModels : []'));
-assert.equal(widget.match(/Qt.callLater\(root.focusControls\)/g).length, 5);
-assert.ok(!widget.includes('Qt.callLater(function() { keyCatcher'));
+assert.ok(!controls.includes("addButton") && !source.includes("downloadModel"));
+assert.ok(controls.includes('options: root.voxtype ? root.voxtype.localModels : []'));
+assert.equal(controls.match(/Qt.callLater\(root.focusControls\)/g).length, 5);
+assert.ok(!controls.includes('Qt.callLater(function() { keyCatcher'));
 let clicks = 0, toggles = 0;
 const dropdown = { enabled: false, toggle() { toggles++; } };
 const button = { enabled: false, clicked() { clicks++; } };
 const keyboard = vm.createContext({ root: { actions: [dropdown, button], actionIndex: 0 },
   backendDropdown: dropdown, languageDropdown: {} });
-vm.runInContext(widget.match(/  function activateAction\([^]*?\n  \}/)[0], keyboard);
+vm.runInContext(qmlFunction(controls, "activateAction"), keyboard);
 keyboard.activateAction();
 assert.equal(toggles, 0);
 dropdown.enabled = true;
@@ -190,82 +203,89 @@ keyboard.activateAction();
 assert.equal(clicks, 1);
 console.log("ok - fuzzy search, installed-only selector, and cancel without installation");
 
-assert.ok(widget.includes("controlRows: [[backendDropdown, unloadButton]"));
-assert.ok(widget.includes("readonly property var actions: [].concat.apply([], controlRows)"));
-assert.ok(widget.includes('text: "h/j/k/l: move"'));
-assert.ok(widget.includes('text: "Settings"'));
-assert.ok(widget.includes('text: "Replacements"'));
-assert.ok(widget.includes('text: "[v]oxtype  [s]ettings  [r]eplacements"'));
+assert.ok(controls.includes("controlRows: [[backendDropdown, unloadButton]"));
+assert.ok(controls.includes("readonly property var actions: [].concat.apply([], controlRows)"));
+assert.ok(controls.includes('text: "h/j/k/l: move"'));
+assert.ok(controls.includes('text: "Settings"'));
+assert.ok(controls.includes('text: "Replacements"'));
+assert.ok(controls.includes('text: "Transcripts"'));
+assert.ok(controls.includes('text: "[v]oxtype  [s]ettings  [r]eplacements  [t]ranscripts"'));
 launch.editorLauncher = {};
 launch.editingReplacements = false;
 launch.ipcTarget = "voxtype.editor.DP-3";
 launch.close = () => { throw new Error("replacement editing must preserve the panel"); };
-vm.runInContext(widget.match(/  function launchReplacements\([^]*?\n  \}/)[0], launch);
+vm.runInContext(qmlFunction(widget, "launchReplacements"), launch);
 launch.launchReplacements();
 assert.equal(launch.editorLauncher.command.join(" "), "omarchy-launch-terminal -e /test/voxtype-control edit-replacements voxtype.editor.DP-3");
 assert.equal(launch.editingReplacements, true);
 assert.equal(launch.editorLauncher.running, true);
 launch.controller = { show() {} };
-launch.root = { focusControls() {} };
-launch.Qt = { callLater(fn) { fn(); } };
+launch.controlPanel = { prepareOpen() { launch.prepared = true; } };
 launch.draftModelId = "pending-model";
-vm.runInContext(widget.match(/  function open\([^]*?\n  \}/)[0], launch);
+vm.runInContext(qmlFunction(widget, "open"), launch);
 launch.open();
 assert.equal(launch.editingReplacements, false);
+assert.equal(launch.prepared, true);
 assert.equal(launch.draftModelId, "pending-model");
-assert.ok(widget.includes("open: root.opened && !root.editingReplacements"));
+assert.ok(controls.includes("open: root.panelOwner.opened && !root.editingReplacements"));
 let closes = 0;
-const shortcuts = vm.createContext({ root: { close() { closes++; } },
-  configureButton: button, configFileButton: button,
-  replacementsButton: button, backendDropdown: { close() {} }, languageDropdown: { close() {} },
-  actionIndex: 0, actions: ["model", "unload", "language", "apply", "tui", "settings", "replacements"],
-  controlRows: [["model", "unload"], ["language"], ["apply"], ["tui", "settings", "replacements"]],
-  focusControls() {} });
-vm.runInContext(widget.match(/  function activateShortcut\([^]*?\n  \}/)[0], shortcuts);
+const shortcuts = vm.createContext({ root: {
+    closeRequested() { closes++; }, actionIndex: 0,
+    actions: ["model", "unload", "language", "apply", "tui", "settings", "replacements", "history"],
+    controlRows: [["model", "unload"], ["language"], ["apply"], ["tui", "settings"],
+      ["replacements", "history"]], focusControls() {},
+  }, configureButton: button, configFileButton: button,
+  replacementsButton: button, historyButton: button,
+  backendDropdown: { close() {} }, languageDropdown: { close() {} } });
+vm.runInContext(qmlFunction(controls, "activateShortcut"), shortcuts);
 const previousClicks = clicks;
-for (const key of ["v", "S", "R", "x", "+"]) shortcuts.activateShortcut(key);
-assert.equal(clicks - previousClicks, 3);
+for (const key of ["v", "S", "R", "t", "x", "+"]) shortcuts.activateShortcut(key);
+assert.equal(clicks - previousClicks, 4);
 shortcuts.activateShortcut("q");
 shortcuts.activateShortcut("Q");
 assert.equal(closes, 2);
-assert.ok(widget.includes('blocked: root.unloadingModel || backendDropdown.popupOpen || languageDropdown.popupOpen'));
+assert.ok(controls.includes('blocked: root.unloadingModel || backendDropdown.popupOpen || languageDropdown.popupOpen'));
 button.enabled = false;
 shortcuts.activateShortcut("r");
-assert.equal(clicks - previousClicks, 3);
-vm.runInContext(widget.match(/  function moveControl\([^]*?\n  \}/)[0], shortcuts);
+assert.equal(clicks - previousClicks, 4);
+vm.runInContext(qmlFunction(controls, "moveControl"), shortcuts);
 shortcuts.moveControl(1);
-assert.equal(shortcuts.actionIndex, 1);
+assert.equal(shortcuts.root.actionIndex, 1);
 shortcuts.moveControl(1);
-assert.equal(shortcuts.actionIndex, 2);
+assert.equal(shortcuts.root.actionIndex, 2);
 shortcuts.moveControl(1);
-assert.equal(shortcuts.actionIndex, 3);
+assert.equal(shortcuts.root.actionIndex, 3);
 shortcuts.moveControl(-1);
-assert.equal(shortcuts.actionIndex, 2);
-vm.runInContext(widget.match(/  function moveCursor\([^]*?\n  \}/)[0], shortcuts);
-shortcuts.actionIndex = 0;
+assert.equal(shortcuts.root.actionIndex, 2);
+vm.runInContext(qmlFunction(controls, "moveCursor"), shortcuts);
+shortcuts.root.actionIndex = 0;
 shortcuts.moveCursor(1, 0);
-assert.equal(shortcuts.actionIndex, 1);
+assert.equal(shortcuts.root.actionIndex, 1);
 shortcuts.moveCursor(-1, 0);
-assert.equal(shortcuts.actionIndex, 0);
+assert.equal(shortcuts.root.actionIndex, 0);
 shortcuts.moveCursor(0, 1);
-assert.equal(shortcuts.actionIndex, 2);
+assert.equal(shortcuts.root.actionIndex, 2);
 shortcuts.moveCursor(1, 0);
-assert.equal(shortcuts.actionIndex, 2);
+assert.equal(shortcuts.root.actionIndex, 2);
 shortcuts.moveCursor(0, 1);
-assert.equal(shortcuts.actionIndex, 3);
+assert.equal(shortcuts.root.actionIndex, 3);
 shortcuts.moveCursor(0, 1);
-assert.equal(shortcuts.actionIndex, 4);
+assert.equal(shortcuts.root.actionIndex, 4);
 shortcuts.moveCursor(1, 0);
-assert.equal(shortcuts.actionIndex, 5);
+assert.equal(shortcuts.root.actionIndex, 5);
 shortcuts.moveCursor(1, 0);
-assert.equal(shortcuts.actionIndex, 6);
+assert.equal(shortcuts.root.actionIndex, 4);
+shortcuts.moveCursor(0, 1);
+assert.equal(shortcuts.root.actionIndex, 6);
+shortcuts.moveCursor(1, 0);
+assert.equal(shortcuts.root.actionIndex, 7);
 shortcuts.moveCursor(0, -1);
-assert.equal(shortcuts.actionIndex, 3);
-assert.ok(widget.indexOf("NoticeSection {") < widget.indexOf('label: "Speech model"'));
+assert.equal(shortcuts.root.actionIndex, 5);
+assert.ok(controls.indexOf("NoticeSection {") < controls.indexOf('label: "Speech model"'));
 console.log("ok - row/column movement, all-control Tab cycle, and unload-only picker");
 
-const stateColor = widget.match(/readonly property color stateColor:([^]*?)\n  readonly/)[1];
-const iconColor = widget.match(/readonly property color statusColor:([^]*?)\n  readonly/)[1];
+const stateColor = widget.match(/readonly property color stateColor: (.*)/)[1];
+const iconColor = widget.match(/readonly property color statusColor: (.*)/)[1];
 const iconState = vm.createContext({voxtype: {dictationState: "idle", available: true,
   reloading: true, readyFlash: false}, urgent: "red", warning: "yellow",
   ready: "green", foreground: "white", dim: "grey"});
@@ -292,8 +312,9 @@ console.log("ok - shared panel/tooltip state colour and no hardcoded palette");
 
 let focused = 0;
 const focus = vm.createContext({ backendDropdown: { popupOpen: false }, languageDropdown: { popupOpen: false },
-  unloadingModel: false, editingReplacements: false, keyCatcher: { forceActiveFocus() { focused++; } } });
-vm.runInContext(widget.match(/  function focusControls\([^]*?\n  \}/)[0], focus);
+  root: { unloadingModel: false, editingReplacements: false },
+  keyCatcher: { forceActiveFocus() { focused++; } } });
+vm.runInContext(qmlFunction(controls, "focusControls"), focus);
 focus.focusControls();
 assert.equal(focused, 1);
 focus.backendDropdown.popupOpen = true;
@@ -302,7 +323,7 @@ assert.equal(focused, 1);
 focus.backendDropdown.popupOpen = false;
 focus.focusControls();
 assert.equal(focused, 2);
-focus.unloadingModel = true;
+focus.root.unloadingModel = true;
 focus.focusControls();
 assert.equal(focused, 2);
 console.log("ok - applied-state gating and search/confirmation focus ownership");
