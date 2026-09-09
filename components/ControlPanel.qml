@@ -143,7 +143,8 @@ KeyboardPanel {
     contentWidth: root.fittedContentWidth(root.unloadingModel && unloadLoader.item
         ? unloadLoader.item.implicitWidth + root.padding * 2 + Border.left(root.borderSpec)
           + Border.right(root.borderSpec) : Math.max(Style.space(440),
-            actionRow.implicitWidth + 2 * actionRow.spacing))
+            actionRow.implicitWidth + root.padding * 2 + Border.left(root.borderSpec)
+              + Border.right(root.borderSpec)))
     contentHeight: root.fittedContentHeight(root.showingHistory && historyLoader.item
         ? historyLoader.item.implicitHeight : root.unloadingModel && unloadLoader.item
           ? unloadLoader.item.implicitHeight : content.implicitHeight)
@@ -340,7 +341,7 @@ KeyboardPanel {
 
             Row {
                 id: actionRow
-                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width
                 spacing: Style.space(6)
 
                 Button {

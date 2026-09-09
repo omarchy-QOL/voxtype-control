@@ -134,8 +134,6 @@ TestCase {
     var panelWidth = Style.space(440)
     var buttons = [tuiAction, settingsAction, replacementsAction, transcriptsAction]
     verify(actionRowFixture.implicitWidth <= panelWidth)
-    verify(Math.abs((panelWidth - actionRowFixture.implicitWidth) / 2
-      - actionRowFixture.spacing) < 1)
     for (const button of buttons) {
       verify(button.iconText !== "")
       compare(button.horizontalPadding, buttons[0].horizontalPadding)
