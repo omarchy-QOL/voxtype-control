@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "io.github.ilyazar.voxtype-control",
   "name": "Voxtype Control",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": "ilyaZar",
   "license": "MIT",
-  "description": "Verified local model switching with model-specific language controls.",
+  "description": "Local model controls and durable transcript recovery.",
   "kinds": [
     "service",
     "bar-widget"
@@ -16,7 +16,7 @@
   },
   "barWidget": {
     "displayName": "Voxtype Control",
-    "description": "Voxtype status, language selection, and ASR switching.",
+    "description": "Voxtype status, ASR controls, and transcript history.",
     "category": "Status",
     "allowMultiple": false,
     "defaultSection": "center"
