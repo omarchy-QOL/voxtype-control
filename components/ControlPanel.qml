@@ -142,7 +142,7 @@ KeyboardPanel {
     focusTarget: keyCatcher
     contentWidth: root.fittedContentWidth(root.unloadingModel && unloadLoader.item
         ? unloadLoader.item.implicitWidth + root.padding * 2 + Border.left(root.borderSpec)
-          + Border.right(root.borderSpec) : Style.space(440))
+          + Border.right(root.borderSpec) : Style.space(560))
     contentHeight: root.fittedContentHeight(root.showingHistory && historyLoader.item
         ? historyLoader.item.implicitHeight : root.unloadingModel && unloadLoader.item
           ? unloadLoader.item.implicitHeight : content.implicitHeight)
@@ -345,6 +345,7 @@ KeyboardPanel {
                     id: configureButton
                     width: (parent.width - 3 * parent.spacing) / 4
                     text: "TUI"
+                    iconText: "󰒓"
                     hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(configureButton)
                     onHovered: function (hovered) {
                         if (hovered)
@@ -361,6 +362,7 @@ KeyboardPanel {
                     id: configFileButton
                     width: configureButton.width
                     text: "Settings"
+                    iconText: "󰷈"
                     hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(configFileButton)
                     onHovered: function (hovered) {
                         if (hovered)
@@ -377,6 +379,7 @@ KeyboardPanel {
                     id: replacementsButton
                     width: configureButton.width
                     text: "Replacements"
+                    iconText: "󰛔"
                     hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(replacementsButton)
                     onHovered: function (hovered) {
                         if (hovered)
@@ -393,6 +396,7 @@ KeyboardPanel {
                     id: historyButton
                     width: configureButton.width
                     text: "Transcripts"
+                    iconText: "󰈙"
                     hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(historyButton)
                     onHovered: function (hovered) {
                         if (hovered)

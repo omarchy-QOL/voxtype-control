@@ -101,6 +101,17 @@ TestCase {
     function clear() { test.historyClears++ }
   }
 
+  Row {
+    id: actionRowFixture
+    visible: false
+    width: Style.space(560)
+    spacing: Style.space(6)
+    Button { id: tuiAction; text: "TUI"; iconText: "󰒓"; bordered: true }
+    Button { id: settingsAction; text: "Settings"; iconText: "󰷈"; bordered: true }
+    Button { id: replacementsAction; text: "Replacements"; iconText: "󰛔"; bordered: true }
+    Button { id: transcriptsAction; text: "Transcripts"; iconText: "󰈙"; bordered: true }
+  }
+
   Components.NoticeSection {
     id: notice
     width: 320
@@ -119,6 +130,15 @@ TestCase {
     hasCursor: test.keyboardCursor
   }
 
+
+  function test_action_icons_and_labels_fit_one_row() {
+    var buttonWidth = (actionRowFixture.width - 3 * actionRowFixture.spacing) / 4
+    for (const button of [tuiAction, settingsAction, replacementsAction, transcriptsAction]) {
+      verify(button.iconText !== "")
+      verify(button.implicitWidth <= buttonWidth)
+    }
+    passed++
+  }
 
   function test_hover_preserves_keyboard_binding() {
     wait(50)
@@ -232,7 +252,7 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 21) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 22) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 
