@@ -23,8 +23,7 @@ KeyboardPanel {
     property int actionIndex: 0
     property bool unloadingModel: false
     property bool showingHistory: false
-    readonly property var controlRows: [[backendDropdown, unloadButton], [languageDropdown],
-        [applyButton], [configureButton, configFileButton, replacementsButton, historyButton]]
+    readonly property var controlRows: [[backendDropdown, unloadButton], [languageDropdown], [applyButton], [configureButton, configFileButton, replacementsButton, historyButton]]
     readonly property var actions: [].concat.apply([], controlRows)
     readonly property var languageOptions: voxtype ? voxtype.languageOptionsFor(draftModelId) : []
     readonly property var selectedModel: voxtype ? voxtype.modelFor(draftModelId) : null
@@ -125,8 +124,7 @@ KeyboardPanel {
     }
 
     function focusControls() {
-        if (!backendDropdown.popupOpen && !languageDropdown.popupOpen
-            && !root.unloadingModel && !root.showingHistory && !root.editingReplacements)
+        if (!backendDropdown.popupOpen && !languageDropdown.popupOpen && !root.unloadingModel && !root.showingHistory && !root.editingReplacements)
             keyCatcher.forceActiveFocus();
     }
 
@@ -140,12 +138,8 @@ KeyboardPanel {
     owner: root.panelOwner
     open: root.panelOwner.opened && !root.editingReplacements
     focusTarget: keyCatcher
-    contentWidth: root.fittedContentWidth(root.unloadingModel && unloadLoader.item
-        ? unloadLoader.item.implicitWidth + root.padding * 2 + Border.left(root.borderSpec)
-          + Border.right(root.borderSpec) : Style.space(560))
-    contentHeight: root.fittedContentHeight(root.showingHistory && historyLoader.item
-        ? historyLoader.item.implicitHeight : root.unloadingModel && unloadLoader.item
-          ? unloadLoader.item.implicitHeight : content.implicitHeight)
+    contentWidth: root.fittedContentWidth(root.unloadingModel && unloadLoader.item ? unloadLoader.item.implicitWidth + root.padding * 2 + Border.left(root.borderSpec) + Border.right(root.borderSpec) : Style.space(560))
+    contentHeight: root.fittedContentHeight(root.showingHistory && historyLoader.item ? historyLoader.item.implicitHeight : root.unloadingModel && unloadLoader.item ? unloadLoader.item.implicitHeight : content.implicitHeight)
 
     Loader {
         id: historyLoader
@@ -229,6 +223,7 @@ KeyboardPanel {
                 foreground: root.foreground
                 ready: root.ready
                 urgent: root.urgent
+                warning: root.warning
                 statusIcon: root.statusIcon
                 fontFamily: root.fontFamily
             }

@@ -47,6 +47,13 @@ TestCase {
     color: service.reloading ? colors.warning
       : service.readyFlash ? colors.ready : "#eeeeee"
   }
+  Components.StatusHeader {
+    id: panelHeader
+    visible: false
+    width: 320
+    service: service
+    warning: colors.warning
+  }
   Plugin.TooltipContent {
     id: tooltip
     visible: false
@@ -283,6 +290,7 @@ TestCase {
   }
 
   function test_reload_feedback_waits_for_fresh_ready_and_expires() {
+    colors.load('yellow = "#e5c07b"')
     service.readyTimer.stop()
     service.operation = "apply"
     service.operationBusy = true
@@ -291,6 +299,8 @@ TestCase {
     service.updateStatus('{"schema":4,"loaded":true,"endpoint_ready":true,"busy":true}')
     verify(service.reloading)
     compare(reloadIcon.color, colors.warning)
+    compare(panelHeader.statusColor, colors.warning)
+    compare(String(panelHeader.statusColor), "#e5c07b")
     service.statusProcess.epoch = service.revision
     service.operationBusy = false
     service.finishAction(true, "")

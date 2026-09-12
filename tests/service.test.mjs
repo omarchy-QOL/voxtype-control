@@ -315,8 +315,10 @@ assert.equal(vm.runInContext(stateColor, status), "white");
 assert.equal(widget.match(/stateColor: root\.stateColor/g).length, 1);
 assert.ok(statusHeader.includes('service.stateLabel === "Ready" ? ready : foreground'));
 assert.ok(statusHeader.includes('service.dictationState === "recording" ? urgent'));
+assert.ok(statusHeader.includes("required property color warning"));
 assert.ok(controls.includes("ready: root.ready"));
 assert.ok(controls.includes("urgent: root.urgent"));
+assert.ok(controls.includes("warning: root.warning"));
 assert.ok(!widget.match(/#[0-9a-fA-F]{6}/));
 console.log("ok - shared panel/tooltip state colour and no hardcoded palette");
 
