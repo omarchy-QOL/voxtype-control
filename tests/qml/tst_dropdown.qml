@@ -111,7 +111,6 @@ TestCase {
   Row {
     id: actionRowFixture
     visible: false
-    width: Style.space(560)
     spacing: Style.space(6)
     Button { id: tuiAction; text: "TUI"; iconText: "󰒓"; bordered: true }
     Button { id: settingsAction; text: "Settings"; iconText: "󰷈"; bordered: true }
@@ -139,11 +138,15 @@ TestCase {
 
 
   function test_action_icons_and_labels_fit_one_row() {
-    var buttonWidth = (actionRowFixture.width - 3 * actionRowFixture.spacing) / 4
-    for (const button of [tuiAction, settingsAction, replacementsAction, transcriptsAction]) {
+    var panelWidth = Style.space(440)
+    var buttons = [tuiAction, settingsAction, replacementsAction, transcriptsAction]
+    verify(actionRowFixture.implicitWidth <= panelWidth)
+    for (const button of buttons) {
       verify(button.iconText !== "")
-      verify(button.implicitWidth <= buttonWidth)
+      compare(button.width, button.implicitWidth)
     }
+    verify(tuiAction.width < settingsAction.width)
+    verify(settingsAction.width < replacementsAction.width)
     passed++
   }
 

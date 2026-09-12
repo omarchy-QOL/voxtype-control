@@ -138,7 +138,7 @@ KeyboardPanel {
     owner: root.panelOwner
     open: root.panelOwner.opened && !root.editingReplacements
     focusTarget: keyCatcher
-    contentWidth: root.fittedContentWidth(root.unloadingModel && unloadLoader.item ? unloadLoader.item.implicitWidth + root.padding * 2 + Border.left(root.borderSpec) + Border.right(root.borderSpec) : Style.space(560))
+    contentWidth: root.fittedContentWidth(root.unloadingModel && unloadLoader.item ? unloadLoader.item.implicitWidth + root.padding * 2 + Border.left(root.borderSpec) + Border.right(root.borderSpec) : Math.max(Style.space(440), actionRow.implicitWidth + root.padding * 2 + Border.left(root.borderSpec) + Border.right(root.borderSpec)))
     contentHeight: root.fittedContentHeight(root.showingHistory && historyLoader.item ? historyLoader.item.implicitHeight : root.unloadingModel && unloadLoader.item ? unloadLoader.item.implicitHeight : content.implicitHeight)
 
     Loader {
@@ -333,12 +333,12 @@ KeyboardPanel {
             }
 
             Row {
+                id: actionRow
                 width: parent.width
                 spacing: Style.space(6)
 
                 Button {
                     id: configureButton
-                    width: (parent.width - 3 * parent.spacing) / 4
                     text: "TUI"
                     iconText: "󰒓"
                     hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(configureButton)
@@ -355,7 +355,6 @@ KeyboardPanel {
 
                 Button {
                     id: configFileButton
-                    width: configureButton.width
                     text: "Settings"
                     iconText: "󰷈"
                     hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(configFileButton)
@@ -372,7 +371,6 @@ KeyboardPanel {
 
                 Button {
                     id: replacementsButton
-                    width: configureButton.width
                     text: "Replacements"
                     iconText: "󰛔"
                     hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(replacementsButton)
@@ -389,7 +387,6 @@ KeyboardPanel {
 
                 Button {
                     id: historyButton
-                    width: configureButton.width
                     text: "Transcripts"
                     iconText: "󰈙"
                     hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(historyButton)
@@ -407,7 +404,7 @@ KeyboardPanel {
 
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "[v] tui  [s]ettings  [r]eplacements  [t]ranscripts"
+                text: "[v]oxtype tui  [s]ettings  [r]eplacements  [t]ranscripts"
                 textFormat: Text.PlainText
                 color: root.dim
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
