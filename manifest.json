@@ -5,11 +5,8 @@
   "version": "0.4.0",
   "author": "ilyaZar",
   "license": "MIT",
-  "description": "Local model controls and durable transcript recovery.",
-  "kinds": [
-    "service",
-    "bar-widget"
-  ],
+  "description": "Minimalist and easy to use local STT model controls for Voxtype. Voxtype TUI fires on right click, and the plugin menu on left click. Convenient features such as quick model switching, word replacement edits and transcript recovery.",
+  "kinds": ["service", "bar-widget"],
   "entryPoints": {
     "service": "Service.qml",
     "barWidget": "BarWidget.qml"
