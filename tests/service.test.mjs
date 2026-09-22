@@ -292,6 +292,11 @@ assert.equal(shortcuts.root.actionIndex, 3);
 assert.ok(controls.indexOf("NoticeSection {") < controls.indexOf('label: "Speech model"'));
 console.log("ok - row/column movement, all-control Tab cycle, and unload-only picker");
 
+const unloadButton = controls.match(/id: unloadButton[^]*?onClicked: root.unloadingModel = true/)[0];
+assert.ok(unloadButton.includes('iconText: "\\uf052"'));
+assert.ok(unloadButton.includes("foreground: root.urgent"));
+assert.ok(unloadButton.includes("fontSize: Style.font.icon"));
+
 const stateColor = widget.match(/readonly property color stateColor: (.*)/)[1];
 const iconColor = widget.match(/readonly property color statusColor: (.*)/)[1];
 const iconState = vm.createContext({voxtype: {dictationState: "idle", available: true,

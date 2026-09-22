@@ -25,7 +25,7 @@ omarchy plugin add https://github.com/omarchy-QOL/voxtype-control --enable
 - **Left-click** the microphone to open model and language controls.
 - Choose an installed model and language, then select **Load / Apply**.
 - Wait for **Ready** before dictating. Finish dictation before switching.
-- Select **×** to unload the current model. Its files stay on disk.
+- Select the red eject icon to unload the current model. Its files stay on disk.
 - Select **Transcripts** to search, review, copy, or explicitly delete completed
   dictations. The newest entry is selected; opening and browsing never copy.
 - **Right-click**, or select **TUI**, to open Voxtype's terminal menu
