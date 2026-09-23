@@ -271,9 +271,9 @@ KeyboardPanel {
                 PanelActionButton {
                     id: unloadButton
                     size: backendDropdown.rowHeight
-                    fontSize: Style.font.body
+                    fontSize: Style.font.icon
                     anchors.bottom: parent.bottom
-                    iconText: "×"
+                    iconText: "\uf052"
                     tooltipText: "Unload current model; keep its files"
                     Accessible.name: "Unload current model"
                     foreground: root.urgent
