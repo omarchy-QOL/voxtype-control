@@ -25,8 +25,8 @@ omarchy plugin add https://github.com/omarchy-QOL/voxtype-control --enable
 This plugin does not automatically replace the stock dictation indicator.
 To show only the plugin microphone, remove `Dictation` from the
 `omarchy.indicators` entry's `items` array in `~/.config/omarchy/shell.json`,
-keeping the other indicators. Disabling or removing the plugin does not restore
-that entry automatically; add it back to regain the stock indicator.
+Disabling or removing the plugin does not restore that entry automatically
+(you have to add it back manually).
 
 ## Use
 
