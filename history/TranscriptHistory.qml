@@ -16,6 +16,7 @@ PanelKeyCatcher {
   property color warningColor: Color.urgent
   property string fontFamily: Style.font.family
   property string selectedId: ""
+  property string copiedId: ""
   property int actionIndex: 0
   property bool actionsFocused: false
   property string confirming: ""
@@ -35,7 +36,7 @@ PanelKeyCatcher {
     root.actionsFocused = false
     root.selectedId = ""
     root.service.refresh(search.text)
-    Qt.callLater(root.focusSearch)
+    Qt.callLater(function() { root.forceActiveFocus() })
   }
 
   function focusSearch() {
@@ -114,11 +115,22 @@ PanelKeyCatcher {
     if (root.confirming) return
     root.focusSearch()
     search.text += text
+    searchTimer.restart()
   }
 
   property Connections historyConnections: Connections {
     target: root.service
     function onEntriesChanged() { root.synchronizeSelection() }
+    function onCopied(transcriptId) {
+      root.copiedId = transcriptId
+      copiedTimer.restart()
+    }
+  }
+
+  Timer {
+    id: copiedTimer
+    interval: 700
+    onTriggered: root.copiedId = ""
   }
 
   Timer {
@@ -214,8 +226,9 @@ PanelKeyCatcher {
           width: ListView.view.width
           height: Style.space(52)
           radius: Style.cornerRadius
-          color: root.selectedId === modelData.id
-            ? Style.controlFill(false, true, root.foreground, Color.accent) : "transparent"
+          color: root.copiedId === modelData.id ? root.warningColor
+            : root.selectedId === modelData.id
+              ? Style.controlFill(false, true, root.foreground, Color.accent) : "transparent"
 
           Column {
             anchors.fill: parent
@@ -353,7 +366,7 @@ PanelKeyCatcher {
 
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
-      text: "Enter: copy  Tab: actions  Esc: back"
+      text: "move: arrows/hjkl  [Enter] copy  [Tab] actions  [Esc] back"
       textFormat: Text.PlainText
       color: root.dim
       font.family: root.fontFamily

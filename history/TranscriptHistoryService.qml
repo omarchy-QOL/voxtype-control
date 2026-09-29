@@ -55,7 +55,7 @@ QtObject {
   }
 
   property Timer noticeTimer: Timer {
-    interval: 2500
+    interval: 5000
     onTriggered: root.notice = ""
   }
 
@@ -89,9 +89,11 @@ QtObject {
         return
       }
       if (action === "copy") {
-        root.notice = "Transcript copied"
+        root.notice = "Transcript copied to clipboard"
         root.noticeTimer.restart()
         root.copied(transcriptId)
+        Quickshell.execDetached(["omarchy-notification-send", "-u", "low", "-t", "5000",
+          "Transcript copied", "The selected transcript is on the clipboard"])
       } else {
         root.notice = action === "delete" ? "Transcript deleted" : "History cleared"
         root.noticeTimer.restart()

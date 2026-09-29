@@ -43,8 +43,9 @@ TestCase {
     width: 18
     height: 18
     text: "󰍬"
-    pulsing: service.reloading
-    color: service.reloading ? colors.warning
+    pulsing: service.reloading || service.recordingFailure
+    color: service.recordingFailure ? colors.warning
+      : service.reloading ? colors.warning
       : service.readyFlash ? colors.ready : "#eeeeee"
   }
   Components.StatusHeader {
@@ -102,6 +103,8 @@ TestCase {
     property string error: ""
     property string warning: ""
     property string notice: ""
+    signal copied(string transcriptId)
+    signal changed()
     function refresh(query) { test.historyRefreshes++; test.historyQuery = query }
     function copy(id) { test.historyCopies++; test.historyQuery = id }
     function remove(id) { test.historyDeletes++; test.historyQuery = id }
@@ -236,6 +239,15 @@ TestCase {
     passed++
   }
 
+  function test_history_copy_feedback_marks_the_copied_row() {
+    historyView.visible = true
+    historyView.copiedId = ""
+    historyFixture.copied("old")
+    compare(historyView.copiedId, "old")
+    historyView.visible = false
+    passed++
+  }
+
   function test_history_copy_and_destructive_confirmations_are_explicit() {
     historyCopies = 0
     historyDeletes = 0
@@ -262,7 +274,7 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 22) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 24) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 
@@ -364,6 +376,25 @@ TestCase {
     }
     var glyph = reloadIcon.children[0]
     compare(glyph.renderType, Text.CurveRendering)
+    passed++
+  }
+
+  function test_record_failure_pulses_yellow_and_expires() {
+    colors.load('yellow = "#e5c07b"')
+    service.reloadState = ""
+    service.readyTimer.stop()
+    service.recordingFailureTimer.interval = 100
+    service.showRecordingFailure("Selected microphone jack is disconnected")
+    verify(service.recordingFailure)
+    compare(service.stateLabel, "Recording failed")
+    compare(String(reloadIcon.color), "#e5c07b")
+    verify(reloadIcon.pulsing)
+    wait(30)
+    verify(reloadIcon.scale > 1)
+    tryCompare(service, "recordingFailure", false, 500)
+    compare(reloadIcon.pulsing, false)
+    compare(String(reloadIcon.color), "#eeeeee")
+    service.clearWarning()
     passed++
   }
 

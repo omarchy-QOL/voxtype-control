@@ -7,18 +7,20 @@ const context = vm.createContext({ metadataUpdated() {}, refreshMetadata() {},
   applyProcess: {}, busy: false, dictating: false, downloadBusy: false, followerHealthy: false, revision: 0,
   warningTimer: { restart() {}, stop() {} }, actionFinished() {}, errorOperation: "",
   reloadState: "", readyTimer: { restart() {}, stop() {} },
+  recordingFailureTimer: { running: false, restart() { this.running = true; } },
   modelOptions: [
     { value: "parakeet", codes: ["auto"], reason: "" },
     { value: "canary", codes: ["en", "de"], reason: "" },
     { value: "moonshine", codes: ["ja"], reason: "" }
   ], modelId: "", language: "", controlPath: "/test/voxtype-control" });
 for (const name of ["modelFor", "languageOptionsFor", "defaultLanguageFor", "updateStatus", "updateHardware", "updateFollower",
-  "request", "cleanError", "clearWarning", "warn", "reportFailure", "resolveFailure", "finishAction"]) {
+  "request", "cleanError", "clearWarning", "warn", "showRecordingFailure", "reportFailure", "resolveFailure", "finishAction"]) {
   const code = source.match(new RegExp(`  function ${name}\\([^]*?\\n  \\}`))?.[0];
   assert.ok(code, name);
   vm.runInContext(code, context);
 }
 Object.defineProperty(context, "reloading", {get: () => context.reloadState !== ""});
+Object.defineProperty(context, "recordingFailure", {get: () => context.recordingFailureTimer.running});
 assert.equal(context.defaultLanguageFor("parakeet"), "auto");
 assert.equal(context.defaultLanguageFor("canary"), "");
 assert.equal(context.defaultLanguageFor("moonshine"), "ja");
@@ -76,6 +78,11 @@ context.dictating = false;
 context.reportFailure("Error: voxtype-control: voxtype-control: Finish dictation before switching models", "apply");
 assert.equal(context.warningKind, "dictation");
 assert.equal(context.error, "");
+context.showRecordingFailure("Selected microphone jack is disconnected");
+assert.equal(context.warning, "Selected microphone jack is disconnected");
+assert.equal(context.warningKind, "recording");
+assert.equal(context.recordingFailure, true);
+context.clearWarning();
 context.reportFailure("voxtype-control: voxtype-control: Missing model", "download");
 assert.equal(context.error, "Missing model");
 context.operation = "apply";
@@ -300,10 +307,13 @@ assert.ok(unloadButton.includes("fontSize: Style.font.icon"));
 const stateColor = widget.match(/readonly property color stateColor: (.*)/)[1];
 const iconColor = widget.match(/readonly property color statusColor: (.*)/)[1];
 const iconState = vm.createContext({voxtype: {dictationState: "idle", available: true,
-  reloading: true, readyFlash: false}, urgent: "red", warning: "yellow",
+  recordingFailure: false, reloading: true, readyFlash: false}, urgent: "red", warning: "yellow",
   ready: "green", foreground: "white", dim: "grey"});
 assert.equal(vm.runInContext(iconColor, iconState), "yellow");
 iconState.voxtype.reloading = false;
+iconState.voxtype.recordingFailure = true;
+assert.equal(vm.runInContext(iconColor, iconState), "yellow");
+iconState.voxtype.recordingFailure = false;
 iconState.voxtype.readyFlash = true;
 assert.equal(vm.runInContext(iconColor, iconState), "green");
 iconState.voxtype.dictationState = "recording";
@@ -322,7 +332,11 @@ status.voxtype.stateLabel = "Listening";
 assert.equal(vm.runInContext(stateColor, status), "white");
 assert.equal(widget.match(/stateColor: root\.stateColor/g).length, 1);
 assert.ok(statusHeader.includes('service.stateLabel === "Ready" ? ready : foreground'));
+assert.ok(statusHeader.includes("service.recordingFailure ? warning"));
 assert.ok(statusHeader.includes('service.dictationState === "recording" ? urgent'));
+assert.ok(widget.includes("root.voxtype.reloading || root.voxtype.recordingFailure"));
+assert.ok(source.includes('target: "io.github.ilyazar.voxtype-control"'));
+assert.ok(source.includes("function recordFailure(message: string): void"));
 assert.ok(statusHeader.includes("required property color warning"));
 assert.ok(controls.includes("ready: root.ready"));
 assert.ok(controls.includes("urgent: root.urgent"));

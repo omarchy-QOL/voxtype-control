@@ -20,9 +20,9 @@ Panel {
     readonly property color urgent: bar && bar.urgent ? bar.urgent : Color.urgent
     readonly property color ready: stateColors.ready
     readonly property color warning: stateColors.warning
-    readonly property color statusColor: voxtype && voxtype.dictationState === "recording" ? urgent : voxtype && voxtype.reloading ? warning : voxtype && voxtype.readyFlash ? ready : voxtype && voxtype.dictationState === "transcribing" ? warning : voxtype && voxtype.available ? foreground : dim
+    readonly property color statusColor: voxtype && voxtype.recordingFailure ? warning : voxtype && voxtype.dictationState === "recording" ? urgent : voxtype && voxtype.reloading ? warning : voxtype && voxtype.readyFlash ? ready : voxtype && voxtype.dictationState === "transcribing" ? warning : voxtype && voxtype.available ? foreground : dim
     readonly property string statusIcon: voxtype && !voxtype.reloading && voxtype.dictationState === "transcribing" ? "󰔟" : "󰍬"
-    readonly property color stateColor: voxtype && voxtype.stateLabel === "Ready" ? ready : foreground
+    readonly property color stateColor: voxtype && voxtype.recordingFailure ? warning : voxtype && voxtype.stateLabel === "Ready" ? ready : foreground
 
     function launchConfiguration() {
         close();
@@ -90,7 +90,7 @@ Panel {
                 color: root.statusColor
                 fontFamily: button.fontFamily
                 fontSize: button.fontSize
-                pulsing: root.voxtype && root.voxtype.reloading
+                pulsing: root.voxtype && (root.voxtype.reloading || root.voxtype.recordingFailure)
             }
         }
         useActiveColor: false

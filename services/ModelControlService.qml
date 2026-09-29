@@ -22,6 +22,7 @@ QtObject {
   property string operation: ""
   property string reloadState: ""
   readonly property bool reloading: reloadState !== ""
+  readonly property bool recordingFailure: recordingFailureTimer.running
   readonly property bool readyFlash: readyTimer.running && loaded && endpointReady
     && !busy && statusError === ""
   property string error: ""
@@ -39,7 +40,8 @@ QtObject {
   readonly property string modelLabel: !loaded ? "No model" : modelFor(modelId) ? modelFor(modelId).label : "Unknown model"
   readonly property string message: statusError || catalogError || error || warning
   readonly property bool messageIsWarning: !statusError && !catalogError && !error && warning !== ""
-  readonly property string stateLabel: busy ? (downloadBusy || (applyProcess.running && operation === "download") ? "Installing" : "Switching")
+  readonly property string stateLabel: recordingFailure ? "Recording failed"
+    : busy ? (downloadBusy || (applyProcess.running && operation === "download") ? "Installing" : "Switching")
     : dictationState === "recording" ? "Listening"
     : dictationState === "transcribing" ? "Transcribing"
     : dictationState === "streaming" ? "Streaming"
@@ -63,6 +65,11 @@ QtObject {
     warning = text
     warningKind = kind || ""
     warningTimer.restart()
+  }
+
+  function showRecordingFailure(raw) {
+    warn(cleanError(raw) || "Recording failed", "recording")
+    recordingFailureTimer.restart()
   }
 
   function reportFailure(raw, action) {
@@ -101,7 +108,16 @@ QtObject {
     onTriggered: root.clearWarning()
   }
 
+  property Timer recordingFailureTimer: Timer { interval: 5000 }
   property Timer readyTimer: Timer { interval: 1000 }
+
+  property IpcHandler recordFailureIpc: IpcHandler {
+    target: "io.github.ilyazar.voxtype-control"
+
+    function recordFailure(message: string): void {
+      root.showRecordingFailure(message)
+    }
+  }
 
   function modelFor(identity) {
     for (var i = 0; i < modelOptions.length; i++)

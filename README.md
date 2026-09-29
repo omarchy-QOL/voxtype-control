@@ -36,6 +36,8 @@ Disabling or removing the plugin does not restore that entry automatically
 - Select the red eject icon to unload the current model. Its files stay on disk.
 - Select **Transcripts** to search, review, copy, or explicitly delete completed
   dictations. The newest entry is selected; opening and browsing never copy.
+  A successful copy flashes the selected row, shows an in-panel confirmation,
+  and sends a five-second desktop notification.
 - **Right-click**, or select **TUI**, to open Voxtype's terminal menu
   for model downloads and configuration.
 
@@ -48,6 +50,10 @@ The GPU row identifies hardware, not a guarantee of GPU acceleration.
 You can close the menu while a model or language change is applying. The
 microphone keeps pulsing yellow, then flashes green for one second when Ready.
 You can dictate immediately; the flash does not add a delay.
+
+Recording failures show a critical desktop notification. The microphone icon
+also pulses yellow for five seconds so failures from a desktop shortcut remain
+visible without a terminal.
 
 ## Demo
 
@@ -71,8 +77,8 @@ Inside the panel:
 | `q` / `Esc`         | Close the panel or dialog |
 
 While typing in a search field, letters remain ordinary text. In transcript
-history, Enter copies the selected entry and Tab moves to
-Copy/Delete/Clear/Back. Delete and Clear require confirmation.
+history, arrows or `h/j/k/l` move, Enter copies the selected entry, and Tab
+moves to Copy/Delete/Clear/Back. Delete and Clear require confirmation.
 
 The Workflow setup also provides `Ctrl+Insert` for dictation and
 `Ctrl+Shift+Insert` for this panel. Desktop shortcuts are configured separately,
