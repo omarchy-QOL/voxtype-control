@@ -125,7 +125,7 @@ PanelKeyCatcher {
 
   Timer {
     id: copiedTimer
-    interval: 2500
+    interval: 500
     onTriggered: root.copiedId = ""
   }
 
