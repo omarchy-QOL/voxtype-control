@@ -239,6 +239,27 @@ TestCase {
     passed++
   }
 
+  function test_history_long_text_is_mouse_scrollable() {
+    historyFixture.entries = [
+      {id: "long", created_at: "2026-09-08T11:00:00Z", model_id: "model",
+        language: "en", preview: "Long transcript", text: "line\n".repeat(200)}
+    ]
+    historyView.visible = true
+    historyView.selectedId = "long"
+    wait(0)
+    var scroll = findChild(historyView, "transcriptHistoryTextScroll")
+    var scrollBar = findChild(historyView, "transcriptHistoryScrollBar")
+    verify(scroll !== null)
+    verify(scrollBar !== null)
+    verify(scroll.contentHeight > scroll.height)
+    verify(scroll.interactive)
+    verify(scrollBar.size < 1)
+    scroll.contentY = scroll.contentHeight - scroll.height
+    verify(scroll.contentY > 0)
+    historyView.visible = false
+    passed++
+  }
+
   function test_history_copy_feedback_marks_the_copied_row() {
     historyView.visible = true
     historyView.copyingId = "old"
@@ -288,7 +309,7 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 24) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 25) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 

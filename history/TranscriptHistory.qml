@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Controls
 import qs.Commons
 import qs.Ui
 import "../components" as Components
@@ -22,6 +23,7 @@ PanelKeyCatcher {
   property int confirmChoice: 1
   readonly property int selectedIndex: HistoryLogic.indexForId(service.entries, selectedId)
   readonly property var selectedEntry: selectedIndex >= 0 ? service.entries[selectedIndex] : null
+  onSelectedIdChanged: transcriptFlick.contentY = 0
   implicitWidth: Style.space(440)
   implicitHeight: root.confirming ? confirmContent.implicitHeight
     : mainContent.implicitHeight
@@ -302,14 +304,26 @@ PanelKeyCatcher {
             elide: Text.ElideRight
           }
           Flickable {
+            id: transcriptFlick
+            objectName: "transcriptHistoryTextScroll"
             width: parent.width
             height: parent.height - parent.spacing - metadataText.height
+            contentWidth: width
             contentHeight: transcriptText.paintedHeight
             clip: true
             boundsBehavior: Flickable.StopAtBounds
+            flickableDirection: Flickable.VerticalFlick
+            interactive: contentHeight > height
+            ScrollBar.vertical: ScrollBar {
+              id: transcriptScrollBar
+              objectName: "transcriptHistoryScrollBar"
+              policy: ScrollBar.AsNeeded
+            }
+
             TextEdit {
               id: transcriptText
-              width: parent.width
+              width: parent.width - (transcriptScrollBar.visible
+                ? transcriptScrollBar.width + Style.space(2) : 0)
               text: root.selectedEntry ? root.selectedEntry.text : "Select a transcript"
               textFormat: TextEdit.PlainText
               readOnly: true
