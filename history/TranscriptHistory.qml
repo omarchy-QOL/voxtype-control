@@ -16,6 +16,7 @@ PanelKeyCatcher {
   property color warningColor: Color.urgent
   property string fontFamily: Style.font.family
   property string selectedId: ""
+  property string copyingId: ""
   property string copiedId: ""
   property string confirming: ""
   property int confirmChoice: 1
@@ -54,8 +55,16 @@ PanelKeyCatcher {
     Qt.callLater(function() { transcriptList.positionViewAtIndex(index, ListView.Contain) })
   }
 
+  function copyTranscript(transcriptId) {
+    if (!transcriptId || root.service.busy) return
+    root.selectedId = transcriptId
+    root.copyingId = transcriptId
+    root.copiedId = ""
+    root.service.copy(transcriptId)
+  }
+
   function copySelected() {
-    if (root.selectedId && !root.service.busy) root.service.copy(root.selectedId)
+    root.copyTranscript(root.selectedId)
   }
 
   function requestConfirmation(action) {
@@ -105,14 +114,18 @@ PanelKeyCatcher {
     target: root.service
     function onEntriesChanged() { root.synchronizeSelection() }
     function onCopied(transcriptId) {
+      root.copyingId = ""
       root.copiedId = transcriptId
       copiedTimer.restart()
+    }
+    function onErrorChanged() {
+      if (root.service.error) root.copyingId = ""
     }
   }
 
   Timer {
     id: copiedTimer
-    interval: 700
+    interval: 2500
     onTriggered: root.copiedId = ""
   }
 
@@ -181,10 +194,10 @@ PanelKeyCatcher {
     }
 
     Text {
-      visible: root.service.notice !== ""
-      text: root.service.notice
+      visible: root.copyingId !== "" || root.service.notice !== ""
+      text: root.copyingId ? "Copying transcript..." : root.service.notice
       textFormat: Text.PlainText
-      color: root.ready
+      color: root.copyingId ? root.warningColor : root.ready
       font.family: root.fontFamily
       font.pixelSize: Style.font.caption
       font.bold: true
@@ -206,14 +219,19 @@ PanelKeyCatcher {
 
         delegate: Rectangle {
           id: transcriptRow
+          objectName: "transcriptRow-" + modelData.id
           required property int index
           required property var modelData
+          readonly property bool copying: root.copyingId === modelData.id
+          readonly property bool copied: root.copiedId === modelData.id
           width: ListView.view.width
           height: Style.space(52)
           radius: Style.cornerRadius
-          color: root.copiedId === modelData.id ? root.warningColor
+          color: copied ? root.warningColor
             : root.selectedId === modelData.id
               ? Style.controlFill(false, true, root.foreground, Color.accent) : "transparent"
+
+          Behavior on color { ColorAnimation { duration: 120 } }
 
           Column {
             anchors.fill: parent
@@ -229,11 +247,15 @@ PanelKeyCatcher {
             }
             Text {
               width: parent.width
-              text: HistoryLogic.displayTime(transcriptRow.modelData.created_at)
+              text: transcriptRow.copied ? "Copied to clipboard"
+                : transcriptRow.copying ? "Copying..."
+                : HistoryLogic.displayTime(transcriptRow.modelData.created_at)
               textFormat: Text.PlainText
-              color: root.dim
+              color: transcriptRow.copying || transcriptRow.copied
+                ? root.foreground : root.dim
               font.family: root.fontFamily
               font.pixelSize: Style.font.caption
+              font.bold: transcriptRow.copying || transcriptRow.copied
               elide: Text.ElideRight
             }
           }
@@ -243,7 +265,7 @@ PanelKeyCatcher {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onEntered: root.selectedId = transcriptRow.modelData.id
-            onClicked: root.selectedId = transcriptRow.modelData.id
+            onClicked: root.copyTranscript(transcriptRow.modelData.id)
           }
         }
 

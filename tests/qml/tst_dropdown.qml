@@ -241,8 +241,10 @@ TestCase {
 
   function test_history_copy_feedback_marks_the_copied_row() {
     historyView.visible = true
+    historyView.copyingId = "old"
     historyView.copiedId = ""
     historyFixture.copied("old")
+    compare(historyView.copyingId, "")
     compare(historyView.copiedId, "old")
     historyView.visible = false
     passed++

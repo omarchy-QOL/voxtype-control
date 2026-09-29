@@ -43,6 +43,8 @@ const activate = qmlFunction(view, "activate");
 assert.ok(activate.includes("service.refresh"));
 assert.ok(!activate.includes("copy"));
 assert.ok(view.includes("selectedId"));
+assert.ok(view.includes("onClicked: root.copyTranscript(transcriptRow.modelData.id)"));
+assert.ok(view.includes("Copied to clipboard"));
 assert.ok(view.includes("requestConfirmation(\"delete\")"));
 assert.ok(view.includes("requestConfirmation(\"clear\")"));
 assert.ok(serviceSource.includes('[root.controlPath, "history", action]'));
