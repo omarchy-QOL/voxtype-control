@@ -77,8 +77,8 @@ Inside the panel:
 | `q` / `Esc`         | Close the panel or dialog |
 
 While typing in a search field, letters remain ordinary text. In transcript
-history, arrows or `h/j/k/l` move, Enter copies the selected entry, and Tab
-moves to Copy/Delete/Clear/Back. Delete and Clear require confirmation.
+history, arrows move, Enter copies, Delete removes the selected entry, and
+Ctrl+Delete clears history. Delete and Clear require confirmation.
 
 The Workflow setup also provides `Ctrl+Insert` for dictation and
 `Ctrl+Shift+Insert` for this panel. Desktop shortcuts are configured separately,

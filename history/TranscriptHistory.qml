@@ -17,13 +17,10 @@ PanelKeyCatcher {
   property string fontFamily: Style.font.family
   property string selectedId: ""
   property string copiedId: ""
-  property int actionIndex: 0
-  property bool actionsFocused: false
   property string confirming: ""
   property int confirmChoice: 1
   readonly property int selectedIndex: HistoryLogic.indexForId(service.entries, selectedId)
   readonly property var selectedEntry: selectedIndex >= 0 ? service.entries[selectedIndex] : null
-  readonly property var actionButtons: [copyButton, deleteButton, clearButton, backButton]
   implicitWidth: Style.space(440)
   implicitHeight: root.confirming ? confirmContent.implicitHeight
     : mainContent.implicitHeight
@@ -33,14 +30,12 @@ PanelKeyCatcher {
 
   function activate() {
     root.confirming = ""
-    root.actionsFocused = false
     root.selectedId = ""
     root.service.refresh(search.text)
-    Qt.callLater(function() { root.forceActiveFocus() })
+    Qt.callLater(root.focusSearch)
   }
 
   function focusSearch() {
-    root.actionsFocused = false
     search.forceActiveFocus()
   }
 
@@ -80,22 +75,14 @@ PanelKeyCatcher {
 
   function activateCurrent() {
     if (root.confirming) { root.confirm(); return }
-    if (!root.actionsFocused) { root.copySelected(); return }
-    var button = root.actionButtons[root.actionIndex]
-    if (button.enabled) button.clicked()
+    root.copySelected()
   }
 
   onMoveRequested: function(dx, dy) {
-    if (root.confirming) {
+    if (root.confirming)
       root.confirmChoice = (root.confirmChoice + (dx || dy) + 2) % 2
-    } else if (dy) {
-      root.actionsFocused = false
+    else if (dy)
       root.moveSelection(dy)
-    } else {
-      root.actionsFocused = true
-      root.actionIndex = (root.actionIndex + dx + root.actionButtons.length)
-        % root.actionButtons.length
-    }
   }
   onActivateRequested: root.activateCurrent()
   onCloseRequested: {
@@ -105,11 +92,7 @@ PanelKeyCatcher {
   onDeleteRequested: if (!root.confirming) root.requestConfirmation("delete")
   onTabRequested: function(direction) {
     if (root.confirming) root.confirmChoice = (root.confirmChoice + direction + 2) % 2
-    else {
-      root.actionsFocused = true
-      root.actionIndex = (root.actionIndex + direction + root.actionButtons.length)
-        % root.actionButtons.length
-    }
+    else root.focusSearch()
   }
   onTextKey: function(text) {
     if (root.confirming) return
@@ -174,13 +157,15 @@ PanelKeyCatcher {
           event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
           root.copySelected(); event.accepted = true
+        } else if (event.key === Qt.Key_Delete) {
+          if (event.modifiers & Qt.ControlModifier) root.requestConfirmation("clear")
+          else root.requestConfirmation("delete")
+          event.accepted = true
         } else if (event.key === Qt.Key_Escape) {
           if (search.text) { search.clear(); root.service.refresh("") }
           else root.backRequested()
           event.accepted = true
         } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
-          root.actionsFocused = true
-          root.actionIndex = event.key === Qt.Key_Backtab ? root.actionButtons.length - 1 : 0
           root.forceActiveFocus()
           event.accepted = true
         }
@@ -316,57 +301,9 @@ PanelKeyCatcher {
       }
     }
 
-    Row {
-      width: parent.width
-      spacing: Style.space(6)
-      Button {
-        id: copyButton
-        width: (parent.width - 3 * parent.spacing) / 4
-        text: "Copy"
-        bordered: true
-        enabled: !!root.selectedId && !root.service.busy
-        hasCursor: root.actionsFocused && root.actionIndex === 0
-        foreground: root.foreground
-        fontFamily: root.fontFamily
-        onClicked: root.copySelected()
-      }
-      Button {
-        id: deleteButton
-        width: copyButton.width
-        text: "Delete"
-        bordered: true
-        enabled: !!root.selectedId && !root.service.busy
-        hasCursor: root.actionsFocused && root.actionIndex === 1
-        foreground: root.urgent
-        fontFamily: root.fontFamily
-        onClicked: root.requestConfirmation("delete")
-      }
-      Button {
-        id: clearButton
-        width: copyButton.width
-        text: "Clear all"
-        bordered: true
-        enabled: root.service.entries.length > 0 && !root.service.busy
-        hasCursor: root.actionsFocused && root.actionIndex === 2
-        foreground: root.urgent
-        fontFamily: root.fontFamily
-        onClicked: root.requestConfirmation("clear")
-      }
-      Button {
-        id: backButton
-        width: copyButton.width
-        text: "Back"
-        bordered: true
-        hasCursor: root.actionsFocused && root.actionIndex === 3
-        foreground: root.foreground
-        fontFamily: root.fontFamily
-        onClicked: root.backRequested()
-      }
-    }
-
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
-      text: "move: arrows/hjkl  [Enter] copy  [Tab] actions  [Esc] back"
+      text: "arrows move  [Enter] copy  [Del] delete  [C-Del] clear  [Esc] back"
       textFormat: Text.PlainText
       color: root.dim
       font.family: root.fontFamily
