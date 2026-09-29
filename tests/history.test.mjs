@@ -47,8 +47,9 @@ assert.ok(view.includes("onClicked: root.copyTranscript(transcriptRow.modelData.
 assert.ok(view.includes("Copied to clipboard"));
 assert.ok(view.includes("requestConfirmation(\"delete\")"));
 assert.ok(!view.includes("requestConfirmation(\"clear\")"));
-assert.ok(view.includes("Qt.Key_C") && view.includes("Qt.Key_D"));
-assert.ok(view.includes("[<-/->] move"));
+assert.ok(!view.includes("Qt.Key_C"));
+assert.ok(view.includes("Qt.ShiftModifier") && view.includes("Qt.Key_D"));
+assert.ok(view.includes("[<-] [->] move"));
 assert.ok(serviceSource.includes('[root.controlPath, "history", action]'));
 assert.ok(!serviceSource.includes("sh -c"));
 console.log("ok - transcript identity, service parsing, and explicit copy/delete contracts");

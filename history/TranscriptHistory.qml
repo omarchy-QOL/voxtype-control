@@ -163,9 +163,8 @@ PanelKeyCatcher {
       onTextEdited: searchTimer.restart()
       Keys.priority: Keys.BeforeItem
       Keys.onPressed: function(event) {
-        if (event.modifiers & Qt.ControlModifier && event.key === Qt.Key_C) {
-          root.copySelected(); event.accepted = true
-        } else if (event.modifiers & Qt.ControlModifier && event.key === Qt.Key_D) {
+        if ((event.modifiers & Qt.ControlModifier)
+            && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_D) {
           root.requestConfirmation("delete"); event.accepted = true
         } else if (event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
           root.moveSelection(event.key === Qt.Key_Down ? 1 : -1)
@@ -322,8 +321,9 @@ PanelKeyCatcher {
     }
 
     Text {
+      objectName: "transcriptHistoryFooter"
       anchors.horizontalCenter: parent.horizontalCenter
-      text: "[<-/->] move  [Enter/Ctrl+C] copy  [Ctrl+D] delete  [Esc] back"
+      text: "[<-] [->] move  [Enter] copy  [Ctrl+Shift+D] delete  [Esc] back"
       textFormat: Text.PlainText
       color: root.dim
       font.family: root.fontFamily

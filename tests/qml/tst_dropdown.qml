@@ -256,17 +256,24 @@ TestCase {
     wait(0)
     historyView.selectedId = "old"
     keyClick(Qt.Key_C, Qt.ControlModifier)
+    compare(historyCopies, 0)
+    keyClick(Qt.Key_Return)
     compare(historyCopies, 1)
     compare(historyQuery, "old")
     keyClick(Qt.Key_D, Qt.ControlModifier)
+    compare(historyView.confirming, "")
+    keyClick(Qt.Key_D, Qt.ControlModifier | Qt.ShiftModifier)
     compare(historyView.confirming, "delete")
     historyView.confirmChoice = 1
     historyView.confirm()
     compare(historyDeletes, 0)
-    keyClick(Qt.Key_D, Qt.ControlModifier)
+    keyClick(Qt.Key_D, Qt.ControlModifier | Qt.ShiftModifier)
     historyView.confirmChoice = 0
     historyView.confirm()
     compare(historyDeletes, 1)
+    var footer = findChild(historyView, "transcriptHistoryFooter")
+    verify(footer !== null)
+    verify(footer.implicitWidth <= historyView.width)
     historyView.visible = false
     passed++
   }
