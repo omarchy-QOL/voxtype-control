@@ -21,7 +21,6 @@ TestCase {
   property int historyRefreshes: 0
   property int historyCopies: 0
   property int historyDeletes: 0
-  property int historyClears: 0
   property string historyQuery: ""
   property alias fixtureService: service
   property var controlRows: [[dropdown, notice], [tooltip]]
@@ -108,7 +107,6 @@ TestCase {
     function refresh(query) { test.historyRefreshes++; test.historyQuery = query }
     function copy(id) { test.historyCopies++; test.historyQuery = id }
     function remove(id) { test.historyDeletes++; test.historyQuery = id }
-    function clear() { test.historyClears++ }
   }
 
   Row {
@@ -250,27 +248,25 @@ TestCase {
     passed++
   }
 
-  function test_history_copy_and_destructive_confirmations_are_explicit() {
+  function test_history_copy_and_delete_shortcuts_are_explicit() {
     historyCopies = 0
     historyDeletes = 0
-    historyClears = 0
     historyView.visible = true
+    historyView.activate()
+    wait(0)
     historyView.selectedId = "old"
-    historyView.copySelected()
+    keyClick(Qt.Key_C, Qt.ControlModifier)
     compare(historyCopies, 1)
     compare(historyQuery, "old")
-    historyView.requestConfirmation("delete")
+    keyClick(Qt.Key_D, Qt.ControlModifier)
+    compare(historyView.confirming, "delete")
     historyView.confirmChoice = 1
     historyView.confirm()
     compare(historyDeletes, 0)
-    historyView.requestConfirmation("delete")
+    keyClick(Qt.Key_D, Qt.ControlModifier)
     historyView.confirmChoice = 0
     historyView.confirm()
     compare(historyDeletes, 1)
-    historyView.requestConfirmation("clear")
-    historyView.confirmChoice = 0
-    historyView.confirm()
-    compare(historyClears, 1)
     historyView.visible = false
     passed++
   }

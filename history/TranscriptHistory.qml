@@ -79,7 +79,6 @@ PanelKeyCatcher {
     var action = root.confirming
     root.confirming = ""
     if (action === "delete") root.service.remove(root.selectedId)
-    else if (action === "clear") root.service.clear()
   }
 
   function activateCurrent() {
@@ -98,7 +97,6 @@ PanelKeyCatcher {
     if (root.confirming) { root.confirming = ""; root.focusSearch() }
     else root.backRequested()
   }
-  onDeleteRequested: if (!root.confirming) root.requestConfirmation("delete")
   onTabRequested: function(direction) {
     if (root.confirming) root.confirmChoice = (root.confirmChoice + direction + 2) % 2
     else root.focusSearch()
@@ -165,15 +163,15 @@ PanelKeyCatcher {
       onTextEdited: searchTimer.restart()
       Keys.priority: Keys.BeforeItem
       Keys.onPressed: function(event) {
-        if (event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
+        if (event.modifiers & Qt.ControlModifier && event.key === Qt.Key_C) {
+          root.copySelected(); event.accepted = true
+        } else if (event.modifiers & Qt.ControlModifier && event.key === Qt.Key_D) {
+          root.requestConfirmation("delete"); event.accepted = true
+        } else if (event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
           root.moveSelection(event.key === Qt.Key_Down ? 1 : -1)
           event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
           root.copySelected(); event.accepted = true
-        } else if (event.key === Qt.Key_Delete) {
-          if (event.modifiers & Qt.ControlModifier) root.requestConfirmation("clear")
-          else root.requestConfirmation("delete")
-          event.accepted = true
         } else if (event.key === Qt.Key_Escape) {
           if (search.text) { search.clear(); root.service.refresh("") }
           else root.backRequested()
@@ -325,7 +323,7 @@ PanelKeyCatcher {
 
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
-      text: "arrows move  [Enter] copy  [Del] delete  [C-Del] clear  [Esc] back"
+      text: "[<-/->] move  [Enter/Ctrl+C] copy  [Ctrl+D] delete  [Esc] back"
       textFormat: Text.PlainText
       color: root.dim
       font.family: root.fontFamily
@@ -341,8 +339,7 @@ PanelKeyCatcher {
     spacing: Style.space(12)
     Text {
       width: parent.width
-      text: root.confirming === "clear" ? "Delete all transcript history?"
-        : "Delete the selected transcript?"
+      text: "Delete the selected transcript?"
       textFormat: Text.PlainText
       wrapMode: Text.WordWrap
       color: root.foreground
