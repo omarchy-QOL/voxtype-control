@@ -37,6 +37,20 @@ assert.equal(root.warning, "save failed\nbad entry");
 assert.equal(root.error, "");
 assert.throws(() => service.updateList('{"schema":2,"entries":[]}'), /current Voxtype/);
 
+const selectionProcess = {};
+const selectionRoot = { busy: false, error: "stale", notice: "stale",
+  controlPath: "/test/voxtype-control" };
+const selectionService = vm.createContext({ root: selectionRoot, selectionProcess });
+vm.runInContext(qmlFunction(serviceSource, "copySelection"), selectionService);
+selectionService.copySelection("selected text");
+assert.equal(selectionRoot.error, "");
+assert.equal(selectionRoot.notice, "");
+assert.equal(selectionProcess.pendingText, "selected text");
+assert.deepEqual(Array.from(selectionProcess.command),
+  ["/test/voxtype-control", "history", "copy-selection"]);
+assert.equal(selectionProcess.stdinEnabled, true);
+assert.equal(selectionProcess.running, true);
+
 const view = fs.readFileSync(
   new URL("../history/TranscriptHistory.qml", import.meta.url), "utf8");
 const activate = qmlFunction(view, "activate");
@@ -55,6 +69,9 @@ assert.ok(view.includes("String.fromCharCode(0x2192)"));
 assert.ok(view.includes("import QtQuick.Controls"));
 assert.ok(view.includes("ScrollBar.vertical: ScrollBar"));
 assert.ok(view.includes("flickableDirection: Flickable.VerticalFlick"));
+assert.ok(view.includes("PointHandler"));
+assert.ok(view.includes("onActiveChanged"));
 assert.ok(serviceSource.includes('[root.controlPath, "history", action]'));
+assert.ok(serviceSource.includes("Selection of transcript text copied"));
 assert.ok(!serviceSource.includes("sh -c"));
 console.log("ok - transcript identity, service parsing, and explicit copy/delete contracts");

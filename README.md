@@ -36,8 +36,9 @@ Disabling or removing the plugin does not restore that entry automatically
 - Select the red eject icon to unload the current model. Its files stay on disk.
 - Select **Transcripts** to search, review, copy, or explicitly delete completed
   dictations. Click an entry or press Enter to copy it; arrow-key browsing does
-  not copy. Use the mouse wheel or scrollbar to read long transcripts. The row
-  shows Copying immediately, then flashes yellow with a confirmation and sends
+  not copy. Use the mouse wheel or scrollbar to read long transcripts.
+  Highlighting text with the mouse copies that selection on release and shows a
+  short in-panel confirmation. Full-entry copies flash the row yellow and send
   a five-second desktop notification after success.
 - **Right-click**, or select **TUI**, to open Voxtype's terminal menu
   for model downloads and configuration.

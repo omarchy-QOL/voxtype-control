@@ -20,6 +20,8 @@ TestCase {
   property int statusRefreshes: 0
   property int historyRefreshes: 0
   property int historyCopies: 0
+  property int historySelectionCopies: 0
+  property string historySelectionText: ""
   property int historyDeletes: 0
   property int historyClears: 0
   property string historyQuery: ""
@@ -107,6 +109,10 @@ TestCase {
     signal changed()
     function refresh(query) { test.historyRefreshes++; test.historyQuery = query }
     function copy(id) { test.historyCopies++; test.historyQuery = id }
+    function copySelection(text) {
+      test.historySelectionCopies++
+      test.historySelectionText = text
+    }
     function remove(id) { test.historyDeletes++; test.historyQuery = id }
     function clear() { test.historyClears++ }
   }
@@ -239,6 +245,17 @@ TestCase {
     passed++
   }
 
+  function test_history_highlight_copies_exact_selection() {
+    historySelectionCopies = 0
+    historySelectionText = ""
+    historyView.copyTextSelection("selected\ntext")
+    compare(historySelectionCopies, 1)
+    compare(historySelectionText, "selected\ntext")
+    historyView.copyTextSelection("")
+    compare(historySelectionCopies, 1)
+    passed++
+  }
+
   function test_history_long_text_is_mouse_scrollable() {
     historyFixture.entries = [
       {id: "long", created_at: "2026-09-08T11:00:00Z", model_id: "model",
@@ -309,7 +326,7 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 25) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 26) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 

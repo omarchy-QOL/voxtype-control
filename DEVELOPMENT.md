@@ -56,8 +56,10 @@ directory, atomic rename, file and directory fsync, and a serialization lock.
 The QML service requests JSON asynchronously with argument arrays. It has no
 model-state dependency. Selection is retained by stable ID across refreshes,
 so a new background entry cannot change the text being reviewed or copied.
-Successful copies flash the stable row ID and produce both in-panel and Omarchy
-desktop confirmations; failures produce neither success signal.
+Successful full-entry copies flash the stable row ID and produce both in-panel
+and Omarchy desktop confirmations; failures produce neither success signal.
+Mouse selections travel over helper standard input and receive only a short
+in-panel confirmation to avoid notification noise.
 
 Capture failures notify but do not block insertion. Unit tests use synthetic
 text and fake clipboards. Output policy is separately persisted by the helper;

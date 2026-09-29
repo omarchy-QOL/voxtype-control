@@ -12,6 +12,7 @@ QtObject {
   property string warning: ""
   property string notice: ""
   readonly property bool busy: listProcess.running || actionProcess.running
+    || selectionProcess.running
 
   signal copied(string transcriptId)
   signal changed()
@@ -42,6 +43,23 @@ QtObject {
   function copy(transcriptId) { runAction("copy", transcriptId) }
   function remove(transcriptId) { runAction("delete", transcriptId) }
   function clear() { runAction("clear", "") }
+
+  function showNotice(message, duration) {
+    noticeTimer.stop()
+    root.notice = message
+    noticeTimer.interval = duration
+    noticeTimer.restart()
+  }
+
+  function copySelection(text) {
+    if (root.busy || !text) return
+    root.error = ""
+    root.notice = ""
+    selectionProcess.pendingText = text
+    selectionProcess.stdinEnabled = true
+    selectionProcess.command = [root.controlPath, "history", "copy-selection"]
+    selectionProcess.running = true
+  }
 
   function runAction(action, transcriptId) {
     if (actionProcess.running || !action) return
@@ -89,17 +107,33 @@ QtObject {
         return
       }
       if (action === "copy") {
-        root.notice = "Transcript copied to clipboard"
-        root.noticeTimer.restart()
+        root.showNotice("Transcript copied to clipboard", 5000)
         root.copied(transcriptId)
         Quickshell.execDetached(["omarchy-notification-send", "-u", "low", "-t", "5000",
           "Transcript copied", "The selected transcript is on the clipboard"])
       } else {
-        root.notice = action === "delete" ? "Transcript deleted" : "History cleared"
-        root.noticeTimer.restart()
+        root.showNotice(action === "delete" ? "Transcript deleted" : "History cleared", 5000)
         root.changed()
         root.refresh(root.query)
       }
+    }
+  }
+
+  property Process selectionProcess: Process {
+    property string pendingText: ""
+    stdinEnabled: false
+    stderr: StdioCollector { id: selectionErrors; waitForEnd: true }
+    onStarted: {
+      write(pendingText)
+      pendingText = ""
+      stdinEnabled = false
+    }
+    onExited: function(code) {
+      if (code !== 0) {
+        root.error = root.clean(selectionErrors.text) || "Transcript selection copy failed"
+        return
+      }
+      root.showNotice("Selection of transcript text copied", 2000)
     }
   }
 }

@@ -69,6 +69,10 @@ PanelKeyCatcher {
     root.copyTranscript(root.selectedId)
   }
 
+  function copyTextSelection(text) {
+    if (text && !root.service.busy) root.service.copySelection(String(text))
+  }
+
   function requestConfirmation(action) {
     if (action === "delete" && !root.selectedId) return
     root.confirming = action
@@ -332,6 +336,19 @@ PanelKeyCatcher {
               color: root.selectedEntry ? root.foreground : root.dim
               font.family: root.fontFamily
               font.pixelSize: Style.font.body
+
+              PointHandler {
+                id: selectionPointer
+                acceptedButtons: Qt.LeftButton
+                property string selectionAtPress: ""
+                onActiveChanged: {
+                  if (active)
+                    selectionAtPress = transcriptText.selectedText
+                  else if (transcriptText.selectedText
+                      && transcriptText.selectedText !== selectionAtPress)
+                    root.copyTextSelection(transcriptText.selectedText)
+                }
+              }
             }
           }
         }
