@@ -77,8 +77,8 @@ Inside the panel:
 | `q` / `Esc`         | Close the panel or dialog |
 
 While typing in a search field, letters remain ordinary text. In transcript
-history, arrow keys move, Enter copies, and `Ctrl+Shift+D` deletes the selected
-entry after confirmation. Bulk clearing remains CLI-only.
+history, arrow keys move, Enter copies, and either Delete or `Ctrl+D` removes
+the selected entry after confirmation. Bulk clearing remains CLI-only.
 
 The Workflow setup also provides `Ctrl+Insert` for dictation and
 `Ctrl+Shift+Insert` for this panel. Desktop shortcuts are configured separately,

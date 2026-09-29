@@ -260,14 +260,12 @@ TestCase {
     keyClick(Qt.Key_Return)
     compare(historyCopies, 1)
     compare(historyQuery, "old")
-    keyClick(Qt.Key_D, Qt.ControlModifier)
-    compare(historyView.confirming, "")
-    keyClick(Qt.Key_D, Qt.ControlModifier | Qt.ShiftModifier)
+    keyClick(Qt.Key_Delete)
     compare(historyView.confirming, "delete")
     historyView.confirmChoice = 1
     historyView.confirm()
     compare(historyDeletes, 0)
-    keyClick(Qt.Key_D, Qt.ControlModifier | Qt.ShiftModifier)
+    keyClick(Qt.Key_D, Qt.ControlModifier)
     historyView.confirmChoice = 0
     historyView.confirm()
     compare(historyDeletes, 1)
