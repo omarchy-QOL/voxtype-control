@@ -79,6 +79,8 @@ PanelKeyCatcher {
     var action = root.confirming
     root.confirming = ""
     if (action === "delete") root.service.remove(root.selectedId)
+    else if (action === "clear") root.service.clear()
+    Qt.callLater(root.focusSearch)
   }
 
   function activateCurrent() {
@@ -163,8 +165,10 @@ PanelKeyCatcher {
       onTextEdited: searchTimer.restart()
       Keys.priority: Keys.BeforeItem
       Keys.onPressed: function(event) {
-        if (event.key === Qt.Key_Delete
-            || ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_D)) {
+        if ((event.modifiers & Qt.ControlModifier)
+            && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_D) {
+          root.requestConfirmation("clear"); event.accepted = true
+        } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_D) {
           root.requestConfirmation("delete"); event.accepted = true
         } else if (event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
           root.moveSelection(event.key === Qt.Key_Down ? 1 : -1)
@@ -320,17 +324,31 @@ PanelKeyCatcher {
       }
     }
 
-    Text {
+    Column {
       objectName: "transcriptHistoryFooter"
-      anchors.horizontalCenter: parent.horizontalCenter
-      text: "[" + String.fromCharCode(0x2190) + "/"
-        + String.fromCharCode(0x2192) + "] move  [Enter] copy"
-        + "  [Del/Ctrl+D] delete  [Esc] back"
-      textFormat: Text.PlainText
-      color: root.dim
-      font.family: root.fontFamily
-      font.pixelSize: Style.font.caption
-      font.bold: true
+      width: parent.width
+      spacing: Style.space(2)
+
+      Text {
+        anchors.horizontalCenter: parent.horizontalCenter
+        text: "[" + String.fromCharCode(0x2190) + "/"
+          + String.fromCharCode(0x2192) + "] move  [Enter] copy  [Esc] back"
+        textFormat: Text.PlainText
+        color: root.dim
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        font.bold: true
+      }
+
+      Text {
+        anchors.horizontalCenter: parent.horizontalCenter
+        text: "[Ctrl+D] delete  [Ctrl+Shift+D] delete all"
+        textFormat: Text.PlainText
+        color: root.dim
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        font.bold: true
+      }
     }
   }
 
@@ -341,7 +359,8 @@ PanelKeyCatcher {
     spacing: Style.space(12)
     Text {
       width: parent.width
-      text: "Delete the selected transcript?"
+      text: root.confirming === "clear" ? "Delete all transcript history?"
+        : "Delete the selected transcript?"
       textFormat: Text.PlainText
       wrapMode: Text.WordWrap
       color: root.foreground

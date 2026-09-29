@@ -77,8 +77,9 @@ Inside the panel:
 | `q` / `Esc`         | Close the panel or dialog |
 
 While typing in a search field, letters remain ordinary text. In transcript
-history, arrow keys move, Enter copies, and either Delete or `Ctrl+D` removes
-the selected entry after confirmation. Bulk clearing remains CLI-only.
+history, arrow keys move, Enter copies, `Ctrl+D` deletes the selected entry,
+and `Ctrl+Shift+D` deletes all transcript history. Both deletions require
+confirmation.
 
 The Workflow setup also provides `Ctrl+Insert` for dictation and
 `Ctrl+Shift+Insert` for this panel. Desktop shortcuts are configured separately,
@@ -112,8 +113,8 @@ continue, shows a critical notification, and remains visible in the history view
 
 History remains available while models are unloaded or ASR is unavailable.
 Removing the plugin or Workflow helper retains the transcript files. Use the
-confirmed Delete action or the explicit `history clear` CLI command when removal
-is intended.
+confirmed `Ctrl+D` or `Ctrl+Shift+D` actions when removal is intended. The
+explicit `history clear` CLI command remains available.
 
 ## Remove
 
