@@ -60,6 +60,7 @@ TestCase {
     visible: false
     width: 320
     service: service
+    panel: panelFixture
     warning: colors.warning
   }
   BarUi.TooltipContent {
@@ -118,6 +119,7 @@ TestCase {
   Plugin.Service {
     id: service
     follower.running: false
+    backend: "voxtype"
     poll.running: false
     function refreshMetadata() {}
     function refreshStatus() { test.statusRefreshes++ }
@@ -342,7 +344,7 @@ TestCase {
   }
 
   function test_panel_sections_expose_the_controls_the_panel_navigates() {
-    for (var control of [bodyFixture.backendDropdown, bodyFixture.unloadButton,
+    for (var control of [bodyFixture.modelDropdown, bodyFixture.unloadButton,
         bodyFixture.languageDropdown, bodyFixture.applyButton, bodyFixture.copyLastButton,
         footerFixture.configureShortcut, footerFixture.settingsShortcut,
         footerFixture.replacementsShortcut, footerFixture.historyShortcut])
@@ -355,9 +357,22 @@ TestCase {
     passed++
   }
 
+  function test_header_offers_backends_and_routes_a_choice() {
+    var switcher = panelHeader.backendSwitcher
+    service.backends = [{ value: "voxtype", label: "Voxtype", reason: "" },
+      { value: "hex", label: "Hex", reason: "Install hex-bin to use Hex" }]
+    compare(switcher.value, "voxtype")
+    compare(switcher.currentLabel(), "Voxtype")
+    switcher.changed("hex")
+    compare(service.warning, "Install hex-bin to use Hex")
+    service.clearWarning()
+    service.backends = []
+    passed++
+  }
+
   function test_follower_wins_over_older_poll() {
     service.updateFollower('{"alt":"recording"}')
-    service.updateStatus('{"schema":4,"state":"idle"}')
+    service.updateStatus('{"schema":5,"backend":"voxtype","state":"idle"}')
     compare(service.dictationState, "recording")
     service.followerHealthy = false
     compare(service.dictationState, "idle")
@@ -560,7 +575,7 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 30) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 31) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 
@@ -597,7 +612,7 @@ TestCase {
     service.operationBusy = true
     service.reloadState = "loading"
     service.followerHealthy = false
-    service.updateStatus('{"schema":4,"loaded":true,"endpoint_ready":true,"busy":true}')
+    service.updateStatus('{"schema":5,"backend":"voxtype","loaded":true,"endpoint_ready":true,"busy":true}')
     verify(service.reloading)
     compare(reloadIcon.color, colors.warning)
     compare(panelHeader.statusColor, colors.warning)
@@ -610,7 +625,7 @@ TestCase {
     compare(statusRefreshes, refreshes + 1)
     verify(service.reloading)
     verify(!service.readyFlash)
-    service.updateStatus('{"schema":4,"state":"idle","loaded":true,"endpoint_ready":true,"processes_active":true}')
+    service.updateStatus('{"schema":5,"backend":"voxtype","state":"idle","loaded":true,"endpoint_ready":true,"processes_active":true}')
     verify(!service.reloading)
     verify(service.readyFlash)
     compare(reloadIcon.color, colors.ready)
@@ -631,15 +646,15 @@ TestCase {
     service.reloadState = "loading"
     service.finishAction(false, "Load failed")
     compare(service.reloading, false)
-    service.updateStatus('{"schema":4,"state":"idle","loaded":true,"endpoint_ready":true}')
+    service.updateStatus('{"schema":5,"backend":"voxtype","state":"idle","loaded":true,"endpoint_ready":true}')
     compare(service.readyFlash, false)
     service.resolveFailure("apply")
     service.reloadState = "loading"
-    service.updateStatus('{"schema":4,"state":"idle","loaded":true,"endpoint_ready":true}')
+    service.updateStatus('{"schema":5,"backend":"voxtype","state":"idle","loaded":true,"endpoint_ready":true}')
     compare(service.readyFlash, false)
     service.reloadState = "loading"
     service.finishAction(true, "")
-    service.updateStatus('{"schema":4,"state":"stopped","loaded":false,"endpoint_ready":false}')
+    service.updateStatus('{"schema":5,"backend":"voxtype","state":"stopped","loaded":false,"endpoint_ready":false}')
     compare(service.reloading, false)
     compare(service.readyFlash, false)
     service.operation = "unload"
@@ -725,7 +740,7 @@ TestCase {
 
   function test_busy_warning_survives_failed_process_exit() {
     service.operationBusy = true
-    service.reportFailure("voxtype-control: Voxtype is busy switching or recording", "apply")
+    service.reportFailure("dictation-control: Dictation is busy switching or recording", "apply")
     service.operationBusy = false
     compare(service.warningKind, "busy")
     compare(service.messageIsWarning, true)
@@ -820,11 +835,11 @@ TestCase {
     compare(service.warning, "")
     service.warn("Temporary warning", "")
     tryCompare(service, "warning", "")
-    service.reportFailure("voxtype-control: voxtype-control: Missing model", "apply")
+    service.reportFailure("dictation-control: voxtype-control: Missing model", "apply")
     compare(notice.message, "Missing model")
     compare(notice.warning, false)
     wait(100)
-    service.updateStatus('{"schema":4,"state":"idle","endpoint_ready":true}')
+    service.updateStatus('{"schema":5,"backend":"voxtype","state":"idle","endpoint_ready":true}')
     compare(service.error, "Missing model")
     service.operation = "apply"
     service.finishAction(true, "")
@@ -860,9 +875,9 @@ TestCase {
 
   function test_hardware_survives_all_model_transitions() {
     service.modelOptions = [{value: "test", label: "Test model"}]
-    service.updateHardware('{"schema":4,"gpus":["Intel","AMD Radeon RX 6400"],"preferred_gpu":"RX 6400"}')
+    service.updateHardware('{"schema":5,"gpus":["Intel","AMD Radeon RX 6400"],"preferred_gpu":"RX 6400"}')
     for (var state of ["stopped", "loading", "idle", "recording", "failed", "idle"]) {
-      service.updateStatus(JSON.stringify({schema: 4, state: state,
+      service.updateStatus(JSON.stringify({schema: 5, backend: "voxtype", state: state,
         loaded: state !== "stopped" && state !== "failed", execution_device: null}))
       compare(service.hardwareLabel, "AMD Radeon RX 6400")
       compare(service.hardwareProcess.running, false)
@@ -870,14 +885,14 @@ TestCase {
     service.statusError = "Status unavailable"
     compare(service.hardwareLabel, "AMD Radeon RX 6400")
     service.statusError = ""
-    service.updateHardware('{"schema":4,"gpus":["Intel"],"preferred_gpu":""}')
+    service.updateHardware('{"schema":5,"gpus":["Intel"],"preferred_gpu":""}')
     compare(service.hardwareLabel, "Intel")
-    service.updateHardware('{"schema":4,"gpus":["Intel","AMD"],"preferred_gpu":""}')
+    service.updateHardware('{"schema":5,"gpus":["Intel","AMD"],"preferred_gpu":""}')
     compare(service.hardwareLabel, "2 GPUs (selection unclear)")
     service.hardwareProcess.exited(1, 0)
     compare(service.hardwareLabel, "GPU unavailable")
     compare(service.controlAvailable, true)
-    service.updateHardware('{"schema":4,"gpus":["Intel"],"preferred_gpu":""}')
+    service.updateHardware('{"schema":5,"gpus":["Intel"],"preferred_gpu":""}')
     compare(service.hardwareLabel, "Intel")
     passed++
   }

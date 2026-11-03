@@ -7,6 +7,7 @@ import qs.Ui
 import "ui/shared/bar" as BarUi
 import "ui/shared/panel" as PanelUi
 import "ui/voxtype" as Voxtype
+import "ui/hex" as Hex
 
 Panel {
     id: root
@@ -16,7 +17,7 @@ Panel {
 
     property bool editingReplacements: false
     readonly property var voxtype: bar && bar.shell ? bar.shell.serviceFor(moduleName) : null
-    readonly property var backendUi: voxtypeBackend
+    readonly property var backendUi: voxtype && voxtype.backend === "hex" ? hexBackend : voxtypeBackend
     readonly property color foreground:
         bar && bar.barForeground ? bar.barForeground : Color.foreground
     readonly property color dim: Qt.darker(foreground, 1.55)
@@ -61,6 +62,10 @@ Panel {
 
     Voxtype.Backend {
         id: voxtypeBackend
+    }
+
+    Hex.Backend {
+        id: hexBackend
     }
 
     BarUi.StateColors {

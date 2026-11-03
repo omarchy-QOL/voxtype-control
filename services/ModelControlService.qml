@@ -11,6 +11,8 @@ QtObject {
   readonly property string dictationState: followerHealthy ? followerState : polledState
   property string modelId: ""
   property string language: ""
+  property string backend: ""
+  property var backends: []
   property string hardwareLabel: "GPU unavailable"
   property var modelOptions: []
   readonly property var localModels: modelOptions.filter(function(model) { return model.installed === true })
@@ -32,7 +34,7 @@ QtObject {
   property string statusError: ""
   property string catalogError: ""
   property int revision: 0
-  readonly property string controlPath: Quickshell.env("HOME") + "/.local/bin/voxtype-control"
+  readonly property string controlPath: Quickshell.env("HOME") + "/.local/bin/dictation-control"
   readonly property bool busy: applyProcess.running || operationBusy || downloadBusy
   readonly property bool dictating: ["recording", "transcribing", "streaming", "eager_recording"].indexOf(dictationState) !== -1
   readonly property bool available: statusError === "" && modelOptions.length > 0
@@ -52,7 +54,7 @@ QtObject {
   signal actionFinished(string action, bool success)
 
   function cleanError(raw) {
-    return String(raw || "").trim().replace(/^(?:(?:Error|voxtype-control):\s*)+/i, "")
+    return String(raw || "").trim().replace(/^(?:(?:Error|dictation-control|voxtype-control):\s*)+/i, "")
   }
 
   function clearWarning() {
@@ -76,13 +78,13 @@ QtObject {
     var text = cleanError(raw) || "Operation failed"
     if (text === "Finish dictation before switching models")
       warn("Stop dictation before applying changes.", "dictation")
-    else if (text === "Voxtype is busy switching or recording")
-      warn("Voxtype is busy. Try again when it is ready.", "busy")
+    else if (text === "Dictation is busy switching or recording")
+      warn("Dictation is busy. Try again when it is ready.", "busy")
     else { error = text; errorOperation = action || operation }
   }
 
   function resolveFailure(action) {
-    var runtimeActions = ["apply", "unload"]
+    var runtimeActions = ["apply", "unload", "use"]
     if (errorOperation === action || (runtimeActions.indexOf(action) !== -1
         && runtimeActions.indexOf(errorOperation) !== -1)) {
       error = ""
@@ -92,7 +94,7 @@ QtObject {
 
   function finishAction(success, raw) {
     revision++
-    if (operation === "apply") reloadState = success ? "checking" : ""
+    if (operation === "apply" || operation === "use") reloadState = success ? "checking" : ""
     if (!success) reportFailure(raw, operation)
     else {
       resolveFailure(operation)
@@ -113,15 +115,6 @@ QtObject {
 
   property IpcHandler recordFailureIpc: IpcHandler {
     target: "omarchy-qol.voxtype-control"
-
-    function recordFailure(message: string): void {
-      root.showRecordingFailure(message)
-    }
-  }
-
-  // Existing helpers still send failures to the previous plugin ID.
-  property IpcHandler legacyRecordFailureIpc: IpcHandler {
-    target: "io.github.ilyazar.voxtype-control"
 
     function recordFailure(message: string): void {
       root.showRecordingFailure(message)
@@ -152,7 +145,8 @@ QtObject {
 
   function updateStatus(raw) {
     var data = JSON.parse(String(raw))
-    if (data.schema !== 4) throw new Error("Install the current Voxtype helper")
+    if (data.schema !== 5) throw new Error("Install the current dictation helper")
+    if (data.backend !== backend) selectBackend(String(data.backend))
     modelId = String(data.model_id || "")
     language = String(data.language || "")
     polledState = String(data.state || "unknown")
@@ -171,6 +165,15 @@ QtObject {
     metadataUpdated()
   }
 
+  function selectBackend(name) {
+    backend = name
+    modelOptions = []
+    followerHealthy = false
+    follower.running = false
+    Qt.callLater(function() { follower.running = true })
+    refreshMetadata()
+  }
+
   function refreshStatus() {
     if (statusProcess.running) return
     statusProcess.epoch = revision
@@ -186,6 +189,7 @@ QtObject {
   }
 
   function refreshMetadata() {
+    if (!backendsProcess.running) backendsProcess.running = true
     if (!catalogProcess.running) catalogProcess.running = true
     if (!hardwareProcess.running) hardwareProcess.running = true
     refreshStatus()
@@ -193,7 +197,7 @@ QtObject {
 
   function updateHardware(raw) {
     var data = JSON.parse(String(raw))
-    if (data.schema !== 4 || !Array.isArray(data.gpus)
+    if (data.schema !== 5 || !Array.isArray(data.gpus)
         || data.gpus.some(function(name) { return typeof name !== "string" || !name.trim() })
         || typeof data.preferred_gpu !== "string")
       throw new Error("Invalid GPU inventory")
@@ -209,7 +213,7 @@ QtObject {
 
   function request(argv) {
     if (busy) { warn("Voxtype is busy. Try again when it is ready.", "busy"); return }
-    if (dictating && ["apply", "unload"].indexOf(argv[0]) !== -1) {
+    if (dictating && ["apply", "unload", "use"].indexOf(argv[0]) !== -1) {
       warn("Stop dictation before applying changes.", "dictation")
       return
     }
@@ -217,13 +221,18 @@ QtObject {
     clearWarning()
     operation = argv[0]
     readyTimer.stop()
-    reloadState = operation === "apply" ? "loading" : ""
+    reloadState = operation === "apply" || operation === "use" ? "loading" : ""
     applyProcess.command = [controlPath].concat(argv)
     applyProcess.running = true
   }
 
   function applySelection(identity, language) { request(["apply", identity, language]) }
   function unload() { request(["unload"]) }
+  function useBackend(name) {
+    var entry = backends.filter(function(item) { return item.value === name })[0]
+    if (entry && entry.reason) warn(entry.reason, "backend")
+    else if (name !== backend) request(["use", name])
+  }
 
   property Timer poll: Timer {
     interval: root.busy ? 500 : 5000
@@ -236,7 +245,7 @@ QtObject {
     }
   }
   property Process follower: Process {
-    command: ["omarchy-voxtype-status"]
+    command: [root.controlPath, "follow"]
     running: true
     stdout: SplitParser {
       onRead: function(line) { root.updateFollower(line) }
@@ -258,6 +267,19 @@ QtObject {
         root.statusError = root.cleanError(failure)
         if (!root.busy) root.reloadState = ""
       }
+    }
+  }
+  property Process backendsProcess: Process {
+    command: [root.controlPath, "backends"]
+    stdout: StdioCollector { id: backendsOutput; waitForEnd: true }
+    onExited: function(code) {
+      try {
+        if (code !== 0) return
+        var data = JSON.parse(String(backendsOutput.text))
+        root.backends = data.backends
+        // An unsupported Omarchy default never reaches status, yet must stay switchable.
+        if (data.selected !== root.backend) root.selectBackend(data.selected)
+      } catch (failure) { console.warn("Dictation backends:", root.cleanError(failure)) }
     }
   }
   property Process catalogProcess: Process {
@@ -295,7 +317,7 @@ QtObject {
       root.operationBusy = false
       root.downloadBusy = false
       root.finishAction(code === 0, applyErrors.text)
-      if (root.operation === "download") {
+      if (root.operation === "download" || root.operation === "use") {
         root.refreshMetadata()
       } else root.refreshStatus()
     }

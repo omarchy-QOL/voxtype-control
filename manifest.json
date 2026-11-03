@@ -5,7 +5,7 @@
   "version": "0.5.0",
   "author": "ilyaZar",
   "license": "MIT",
-  "description": "Minimalist and easy to use local STT model controls for Voxtype. Voxtype TUI fires on right click, and the plugin menu on left click. Convenient features such as quick model switching, word replacement edits and transcript recovery.",
+  "description": "Minimalist and easy to use local STT model controls for Voxtype and Hex. Backend tools fire on right click, and the plugin menu on left click. Convenient features such as quick backend and model switching, word replacement edits and transcript recovery.",
   "kinds": ["service", "bar-widget"],
   "entryPoints": {
     "service": "Service.qml",
@@ -13,7 +13,7 @@
   },
   "barWidget": {
     "displayName": "Voxtype Control",
-    "description": "Voxtype status, ASR controls, and transcript history.",
+    "description": "Dictation status, ASR controls, and transcript history.",
     "category": "Status",
     "allowMultiple": false,
     "defaultSection": "center"

@@ -12,32 +12,35 @@ const context = vm.createContext({ metadataUpdated() {}, refreshMetadata() {},
     { value: "parakeet", codes: ["auto"], reason: "" },
     { value: "canary", codes: ["en", "de"], reason: "" },
     { value: "moonshine", codes: ["ja"], reason: "" }
-  ], modelId: "", language: "", controlPath: "/test/voxtype-control" });
+  ], modelId: "", language: "", backend: "voxtype", controlPath: "/test/dictation-control" });
 for (const name of ["modelFor", "languageOptionsFor", "defaultLanguageFor", "updateStatus", "updateHardware", "updateFollower",
-  "request", "cleanError", "clearWarning", "warn", "showRecordingFailure", "reportFailure", "resolveFailure", "finishAction"]) {
+  "request", "useBackend", "selectBackend", "cleanError", "clearWarning", "warn", "showRecordingFailure", "reportFailure", "resolveFailure", "finishAction"]) {
   const code = source.match(new RegExp(`  function ${name}\\([^]*?\\n  \\}`))?.[0];
   assert.ok(code, name);
   vm.runInContext(code, context);
 }
 Object.defineProperty(context, "reloading", {get: () => context.reloadState !== ""});
 Object.defineProperty(context, "recordingFailure", {get: () => context.recordingFailureTimer.running});
+context.Qt = { callLater(callback) { callback(); } };
+context.follower = { running: true };
+context.refreshMetadata = () => { context.metadataRefreshes = (context.metadataRefreshes || 0) + 1; };
 assert.equal(context.defaultLanguageFor("parakeet"), "auto");
 assert.equal(context.defaultLanguageFor("canary"), "");
 assert.equal(context.defaultLanguageFor("moonshine"), "ja");
 assert.equal(context.defaultLanguageFor("missing"), "");
-context.updateStatus(JSON.stringify({ schema: 4, model_id: "canary", language: "de",
+context.updateStatus(JSON.stringify({ schema: 5, backend: "voxtype", model_id: "canary", language: "de",
   state: "streaming", endpoint_ready: true, loaded: true, processes_active: true }));
 assert.equal(context.polledState, "streaming");
-context.updateHardware('{"schema":4,"gpus":["Intel","AMD Radeon RX 6400"],"preferred_gpu":"RX 6400"}');
-context.updateStatus('{"schema":4,"loaded":true}');
+context.updateHardware('{"schema":5,"gpus":["Intel","AMD Radeon RX 6400"],"preferred_gpu":"RX 6400"}');
+context.updateStatus('{"schema":5,"backend":"voxtype","loaded":true}');
 assert.equal(context.hardwareLabel, "AMD Radeon RX 6400");
-context.updateStatus('{"schema":4,"loaded":false}');
+context.updateStatus('{"schema":5,"backend":"voxtype","loaded":false}');
 assert.equal(context.hardwareLabel, "AMD Radeon RX 6400");
 assert.equal(vm.runInContext(source.match(/readonly property string modelLabel: (.*)/)[1], context), "No model");
-context.updateStatus('{"schema":4,"loaded":true,"execution_device":null}');
+context.updateStatus('{"schema":5,"backend":"voxtype","loaded":true,"execution_device":null}');
 assert.equal(context.hardwareLabel, "AMD Radeon RX 6400");
 context.updateFollower('{"alt":"recording"}');
-context.updateStatus('{"schema":4,"state":"idle","model_id":"canary","language":"de"}');
+context.updateStatus('{"schema":5,"backend":"voxtype","state":"idle","model_id":"canary","language":"de"}');
 assert.equal(context.followerState, "recording");
 assert.equal(context.followerHealthy, true);
 assert.equal(context.polledState, "idle");
@@ -47,8 +50,8 @@ assert.equal(context.defaultLanguageFor("canary"), "de");
 assert.throws(() => context.updateStatus('{"schema":2}'));
 assert.throws(() => context.updateStatus('{"schema":3}'));
 assert.throws(() => context.updateHardware('{"schema":3,"gpus":[]}'));
-assert.throws(() => context.updateHardware('{"schema":4,"gpus":null,"preferred_gpu":""}'));
-assert.throws(() => context.updateHardware('{"schema":4,"gpus":[""],"preferred_gpu":""}'));
+assert.throws(() => context.updateHardware('{"schema":5,"gpus":null,"preferred_gpu":""}'));
+assert.throws(() => context.updateHardware('{"schema":5,"gpus":[""],"preferred_gpu":""}'));
 for (const [gpus, preference, expected] of [
   [["Intel", "AMD Radeon RX 6400"], "", "2 GPUs (selection unclear)"],
   [["AMD Radeon RX 6400", "AMD Radeon RX 6400"], "RX 6400", "2 GPUs (selection unclear)"],
@@ -57,7 +60,7 @@ for (const [gpus, preference, expected] of [
   [[], "", "No GPU detected"],
   [["Intel", "AMD Radeon RX 6400"], "rx 6400", "AMD Radeon RX 6400"],
 ]) {
-  context.updateHardware(JSON.stringify({schema: 4, gpus, preferred_gpu: preference}));
+  context.updateHardware(JSON.stringify({schema: 5, gpus, preferred_gpu: preference}));
   assert.equal(context.hardwareLabel, expected);
 }
 context.error = "previous error";
@@ -65,7 +68,7 @@ context.errorOperation = "apply";
 context.request(["apply", "canary", "en"]);
 assert.equal(context.error, "previous error");
 assert.equal(context.applyProcess.running, true);
-assert.equal(context.applyProcess.command.join(" "), "/test/voxtype-control apply canary en");
+assert.equal(context.applyProcess.command.join(" "), "/test/dictation-control apply canary en");
 assert.equal(context.revision, 1);
 context.finishAction(true, "");
 assert.equal(context.error, "");
@@ -75,7 +78,7 @@ context.request(["apply", "canary", "en"]);
 assert.equal(context.warning, "Stop dictation before applying changes.");
 assert.equal(context.applyProcess.running, false);
 context.dictating = false;
-context.reportFailure("Error: voxtype-control: voxtype-control: Finish dictation before switching models", "apply");
+context.reportFailure("Error: dictation-control: voxtype-control: Finish dictation before switching models", "apply");
 assert.equal(context.warningKind, "dictation");
 assert.equal(context.error, "");
 context.showRecordingFailure("Selected microphone jack is disconnected");
@@ -83,7 +86,7 @@ assert.equal(context.warning, "Selected microphone jack is disconnected");
 assert.equal(context.warningKind, "recording");
 assert.equal(context.recordingFailure, true);
 context.clearWarning();
-context.reportFailure("voxtype-control: voxtype-control: Missing model", "download");
+context.reportFailure("dictation-control: voxtype-control: Missing model", "download");
 assert.equal(context.error, "Missing model");
 context.operation = "apply";
 context.finishAction(true, "");
@@ -186,18 +189,48 @@ console.log("ok - latest transcript copy uses the shared history path, independe
 assert.ok(controls.includes("checkColor: root.ready"));
 assert.ok(!widget.includes("slotSize: Style.bar.statusSlot"));
 const voxtypeUi = fs.readFileSync(new URL("../ui/voxtype/Backend.qml", import.meta.url), "utf8");
+const hexUi = fs.readFileSync(new URL("../ui/hex/Backend.qml", import.meta.url), "utf8");
+assert.ok(hexUi.includes('toolShortcut: "m"') && !hexUi.includes("omarchy-launch-terminal"));
+assert.ok(widget.includes('voxtype.backend === "hex" ? hexBackend : voxtypeBackend'));
 const launch = vm.createContext({
   backendUi: {},
-  voxtype: { controlPath: "/test/voxtype-control", unload() { throw new Error("TUI must not unload"); } },
+  voxtype: { controlPath: "/test/dictation-control", unload() { throw new Error("TUI must not unload"); } },
   close() {}, Quickshell: { execDetached(argv) { launch.launched = argv; } },
 });
 vm.runInContext(qmlFunction(widget, "launchConfiguration"), launch);
 vm.runInContext(`backendUi.toolCommand = ${voxtypeUi.match(/function toolCommand\([^]*?\n  \}/)[0].replace("function toolCommand", "function")}`, launch);
 launch.launchConfiguration();
-assert.equal(launch.launched.join(" "), "omarchy-launch-terminal -e /test/voxtype-control configure");
+assert.equal(launch.launched.join(" "), "omarchy-launch-terminal -e /test/dictation-control configure");
 assert.ok(controls.includes('id: unloadButton'));
 assert.ok(controls.includes('tooltipText: "Unload current model; keep its files"'));
 assert.ok(voxtypeUi.includes('toolSuffix: "oxtype tui"'));
+context.applyProcess = {};
+context.backends = [{ value: "voxtype", reason: "" }, { value: "hex", reason: "Install hex-bin to use Hex" }];
+context.useBackend("hex");
+assert.equal(context.applyProcess.running, undefined);
+assert.equal(context.warning, "Install hex-bin to use Hex");
+context.backends[1].reason = "";
+context.useBackend("voxtype");
+assert.equal(context.applyProcess.running, undefined);
+context.useBackend("hex");
+assert.equal(context.applyProcess.command.join(" "), "/test/dictation-control use hex");
+assert.equal(context.reloadState, "loading");
+context.applyProcess = {};
+context.dictating = true;
+context.useBackend("voxtype");
+assert.equal(context.applyProcess.running, undefined);
+context.dictating = false;
+context.reloadState = "";
+const catalog = context.modelOptions;
+const refreshes = context.metadataRefreshes || 0;
+context.updateStatus('{"schema":5,"backend":"hex","state":"stopped"}');
+assert.equal(context.backend, "hex");
+assert.equal(context.modelOptions.length, 0);
+assert.equal(context.follower.running, true);
+assert.equal(context.followerHealthy, false);
+assert.equal(context.metadataRefreshes, refreshes + 1);
+context.backend = "voxtype";
+context.modelOptions = catalog;
 console.log("ok - language policies, draft validation, state and process requests");
 
 const models = [
@@ -222,7 +255,7 @@ let clicks = 0, toggles = 0;
 const dropdown = { enabled: false, toggle() { toggles++; } };
 const button = { enabled: false, clicked() { clicks++; } };
 const keyboard = vm.createContext({ root: { actions: [dropdown, button], actionIndex: 0 },
-  backendDropdown: dropdown, languageDropdown: {} });
+  backendSwitcher: {}, modelDropdown: dropdown, languageDropdown: {} });
 vm.runInContext(qmlFunction(controls, "activateAction"), keyboard);
 keyboard.activateAction();
 assert.equal(toggles, 0);
@@ -237,7 +270,7 @@ keyboard.activateAction();
 assert.equal(clicks, 1);
 console.log("ok - fuzzy search, installed-only selector, and cancel without installation");
 
-assert.ok(controls.includes("controlRows: [[backendDropdown, unloadButton]"));
+assert.ok(controls.includes("controlRows: [[backendSwitcher], [modelDropdown, unloadButton]"));
 assert.ok(controls.includes("readonly property var actions: [].concat.apply([], controlRows)"));
 assert.ok(!controls.includes('text: "h/j/k/l: move"'));
 assert.equal((controls.match(/FooterShortcut \{/g) || []).length, 4);
@@ -257,7 +290,7 @@ launch.ipcTarget = "voxtype.editor.DP-3";
 launch.close = () => { throw new Error("replacement editing must preserve the panel"); };
 vm.runInContext(qmlFunction(widget, "launchReplacements"), launch);
 launch.launchReplacements();
-assert.equal(launch.editorLauncher.command.join(" "), "omarchy-launch-terminal -e /test/voxtype-control edit-replacements voxtype.editor.DP-3");
+assert.equal(launch.editorLauncher.command.join(" "), "omarchy-launch-terminal -e /test/dictation-control edit-replacements voxtype.editor.DP-3");
 assert.equal(launch.editingReplacements, true);
 assert.equal(launch.editorLauncher.running, true);
 launch.controller = { show() {} };
@@ -277,7 +310,7 @@ const shortcuts = vm.createContext({ root: {
       ["tui", "settings", "replacements", "history"]], focusControls() {},
   }, copyLastButton: button, configureShortcut: button, settingsShortcut: button,
   replacementsShortcut: button, historyShortcut: button,
-  backendDropdown: { close() {} }, languageDropdown: { close() {} } });
+  backendSwitcher: { close() {} }, modelDropdown: { close() {} }, languageDropdown: { close() {} } });
 vm.runInContext(qmlFunction(controls, "activateShortcut"), shortcuts);
 const previousClicks = clicks;
 for (const key of ["c", "C", "v", "S", "R", "t", "x", "+"]) shortcuts.activateShortcut(key);
@@ -285,7 +318,7 @@ assert.equal(clicks - previousClicks, 6);
 shortcuts.activateShortcut("q");
 shortcuts.activateShortcut("Q");
 assert.equal(closes, 2);
-assert.ok(controls.includes('blocked: root.unloadingModel || root.backendDropdown.popupOpen || root.languageDropdown.popupOpen'));
+assert.ok(controls.includes('blocked: root.unloadingModel || root.backendSwitcher.popupOpen || root.modelDropdown.popupOpen || root.languageDropdown.popupOpen'));
 button.enabled = false;
 shortcuts.activateShortcut("r");
 shortcuts.activateShortcut("C");
@@ -374,7 +407,8 @@ assert.ok(statusHeader.includes("service.recordingFailure ? warning"));
 assert.ok(statusHeader.includes('service.dictationState === "recording" ? urgent'));
 assert.ok(widget.includes("root.voxtype.reloading || root.voxtype.recordingFailure"));
 assert.ok(source.includes('target: "omarchy-qol.voxtype-control"'));
-assert.ok(source.includes('target: "io.github.ilyazar.voxtype-control"'));
+assert.ok(!source.includes("io.github.ilyazar"));
+assert.ok(!source.includes("omarchy-voxtype-status"));
 assert.ok(source.includes("function recordFailure(message: string): void"));
 assert.ok(statusHeader.includes("required property color warning"));
 assert.ok(controls.includes("ready: root.ready"));
@@ -386,16 +420,16 @@ assert.ok(widget.includes(`moduleName: "${manifest.id}"`));
 console.log("ok - shared panel/tooltip state colour and no hardcoded palette");
 
 let focused = 0;
-const focus = vm.createContext({ backendDropdown: { popupOpen: false }, languageDropdown: { popupOpen: false },
+const focus = vm.createContext({ backendSwitcher: { popupOpen: false }, modelDropdown: { popupOpen: false }, languageDropdown: { popupOpen: false },
   root: { unloadingModel: false, editingReplacements: false },
   keyCatcher: { forceActiveFocus() { focused++; } } });
 vm.runInContext(qmlFunction(controls, "focusControls"), focus);
 focus.focusControls();
 assert.equal(focused, 1);
-focus.backendDropdown.popupOpen = true;
+focus.modelDropdown.popupOpen = true;
 focus.focusControls();
 assert.equal(focused, 1);
-focus.backendDropdown.popupOpen = false;
+focus.modelDropdown.popupOpen = false;
 focus.focusControls();
 assert.equal(focused, 2);
 focus.root.unloadingModel = true;

@@ -6,7 +6,8 @@ Item {
     id: root
 
     required property var service
-    property string title: ""
+    required property var panel
+    property alias backendSwitcher: backendSwitcher
     property color foreground: Color.foreground
     property color dim: Qt.darker(foreground, 1.55)
     property color ready: Color.accent
@@ -34,12 +35,24 @@ Item {
 
         Column {
             spacing: Style.space(2)
-            Text {
-                text: root.title
-                color: root.foreground
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.title
-                font.bold: true
+            BackendDropdown {
+                id: backendSwitcher
+                objectName: "backendSwitcher"
+                selectedValue: root.service ? root.service.backend : ""
+                options: root.service ? root.service.backends : []
+                foreground: root.foreground
+                fontFamily: root.fontFamily
+                enabled: root.service && !root.service.busy && !root.service.dictating
+                hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(backendSwitcher)
+                onHovered: function (hovered) {
+                    if (hovered)
+                        root.panel.actionIndex = root.panel.actions.indexOf(backendSwitcher);
+                }
+                onChanged: function (value) {
+                    root.service.useBackend(value);
+                }
+                onPopupOpenChanged: if (!popupOpen)
+                    Qt.callLater(root.panel.focusControls)
             }
             Text {
                 text: root.service ? root.service.stateLabel : "Unavailable"

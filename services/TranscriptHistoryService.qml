@@ -5,7 +5,7 @@ import Quickshell.Io
 QtObject {
   id: root
 
-  readonly property string controlPath: Quickshell.env("HOME") + "/.local/bin/voxtype-control"
+  readonly property string controlPath: Quickshell.env("HOME") + "/.local/bin/dictation-control"
   property var entries: []
   property string query: ""
   property string error: ""
@@ -18,7 +18,7 @@ QtObject {
   signal changed()
 
   function clean(raw) {
-    return String(raw || "").trim().replace(/^(?:(?:Error|voxtype-control):\s*)+/i, "")
+    return String(raw || "").trim().replace(/^(?:(?:Error|dictation-control|voxtype-control):\s*)+/i, "")
   }
 
   function refresh(filter) {
@@ -33,7 +33,7 @@ QtObject {
   function updateList(raw) {
     var data = JSON.parse(String(raw))
     if (data.schema !== 1 || !Array.isArray(data.entries))
-      throw new Error("Install the current Voxtype history helper")
+      throw new Error("Install the current dictation history helper")
     root.entries = data.entries
     root.warning = [data.capture_error || ""].concat(data.warnings || [])
       .filter(function(text) { return text }).join("\n")

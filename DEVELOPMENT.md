@@ -3,18 +3,22 @@
 ## Runtime contract
 
 The service and bar widget run inside Omarchy's shell. The external
-`voxtype-control` helper owns configuration and systemd operations; the plugin
+`dictation-control` helper owns configuration and systemd operations; the plugin
 does not install runtimes or models. Workflow's application setup supplies
-the helper through `apps/voxtype-setup/setup_voxtype.sh`.
+the helper through `apps/voxtype-setup/setup_voxtype.sh`. It routes each command
+to the backend named in `~/.config/omarchy/defaults/dictation`.
 
+- `backends` lists Voxtype and Hex with the selected one and any blocker.
+- `use BACKEND` unloads the old backend, saves the choice and loads the new one.
 - `list` supplies model IDs, installed status, language codes, and blockers.
-- `status` uses schema 4 for selection, process readiness, and operation state.
+- `status` uses schema 5 for backend, selection, process readiness, and
+  operation state.
 - `hardware` reads Fastfetch's GPU inventory and the device preference
   independently of model state.
 - `apply MODEL LANGUAGE` and `unload` wait for the systemd operation to finish.
 - `configure`, `edit-config`, and `edit-replacements` open the existing tools.
 - `history list/show/copy/delete/clear` is independent of model configuration.
-- `omarchy-voxtype-status` supplies the live dictation stream.
+- `follow` supplies the live dictation stream for the selected backend.
 
 The header reports controller state; the model/language draft stays local to
 each panel. Both dropdowns use an explicit QML Binding so upstream writes to
@@ -34,8 +38,6 @@ an 8% scale pulse and opacity over 500 ms, with no opacity jump between cycles.
 Failures reset it without a success flash. Feedback never gates model usability.
 Recording failures arrive through best-effort shell IPC, show the same warning
 palette, and pulse for five seconds independently of model reload feedback.
-Failure IPC also accepts the previous plugin ID so existing helpers continue
-reporting after the identity change.
 
 ## Structure
 
@@ -44,7 +46,7 @@ Root `BarWidget.qml` and `Service.qml` remain Omarchy host entry points.
 helpers. The service has one host-managed lifetime; panels remain per screen.
 
 ```text
-ui/voxtype/             what the panel shows and launches for Voxtype
+ui/voxtype/, ui/hex/    what the panel shows and launches for each backend
 ui/shared/bar/          bar icon, tooltip and theme colors
 ui/shared/panel/        ControlPanel owns draft state and keyboard navigation
   Header.qml            title, state, current model and hardware

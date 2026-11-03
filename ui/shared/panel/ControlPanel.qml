@@ -25,7 +25,8 @@ KeyboardPanel {
     property bool unloadingModel: false
     property bool showingHistory: false
     property bool showLastCopyNotice: false
-    readonly property alias backendDropdown: body.backendDropdown
+    readonly property alias backendSwitcher: header.backendSwitcher
+    readonly property alias modelDropdown: body.modelDropdown
     readonly property alias unloadButton: body.unloadButton
     readonly property alias languageDropdown: body.languageDropdown
     readonly property alias applyButton: body.applyButton
@@ -35,7 +36,7 @@ KeyboardPanel {
     readonly property alias replacementsShortcut: footer.replacementsShortcut
     readonly property alias historyShortcut: footer.historyShortcut
     readonly property var historyService: voxtype && voxtype.history ? voxtype.history : null
-    readonly property var controlRows: [[backendDropdown, unloadButton], [languageDropdown], [applyButton, copyLastButton], [configureShortcut, settingsShortcut, replacementsShortcut, historyShortcut]]
+    readonly property var controlRows: [[backendSwitcher], [modelDropdown, unloadButton], [languageDropdown], [applyButton, copyLastButton], [configureShortcut, settingsShortcut, replacementsShortcut, historyShortcut]]
     readonly property real horizontalInset: root.padding * 2 + Border.left(root.borderSpec) + Border.right(root.borderSpec)
     readonly property real preferredControlsWidth: Math.max(Style.space(360), footer.implicitWidth + root.horizontalInset, body.primaryActions.naturalWidth + root.horizontalInset)
     readonly property var actions: [].concat.apply([], controlRows)
@@ -99,7 +100,8 @@ KeyboardPanel {
     }
 
     function moveControl(direction) {
-        backendDropdown.close();
+        backendSwitcher.close();
+        modelDropdown.close();
         languageDropdown.close();
         root.actionIndex = (root.actionIndex + direction + root.actions.length) % root.actions.length;
         root.focusControls();
@@ -142,14 +144,14 @@ KeyboardPanel {
         var action = root.actions[root.actionIndex];
         if (!action || !action.enabled)
             return;
-        if (action === backendDropdown || action === languageDropdown)
+        if (action === backendSwitcher || action === modelDropdown || action === languageDropdown)
             action.toggle();
         else
             action.clicked();
     }
 
     function focusControls() {
-        if (!backendDropdown.popupOpen && !languageDropdown.popupOpen && !root.unloadingModel && !root.showingHistory && !root.editingReplacements)
+        if (!backendSwitcher.popupOpen && !modelDropdown.popupOpen && !languageDropdown.popupOpen && !root.unloadingModel && !root.showingHistory && !root.editingReplacements)
             keyCatcher.forceActiveFocus();
     }
 
@@ -157,6 +159,11 @@ KeyboardPanel {
         target: root.voxtype
         function onMetadataUpdated() {
             root.syncDrafts();
+        }
+        function onBackendChanged() {
+            root.draftTouched = false;
+            root.draftModelId = "";
+            root.draftLanguage = "";
         }
     }
 
@@ -191,7 +198,7 @@ KeyboardPanel {
         id: keyCatcher
         anchors.fill: parent
         visible: !root.showingHistory
-        blocked: root.unloadingModel || root.backendDropdown.popupOpen || root.languageDropdown.popupOpen
+        blocked: root.unloadingModel || root.backendSwitcher.popupOpen || root.modelDropdown.popupOpen || root.languageDropdown.popupOpen
         onMoveRequested: function (dx, dy) {
             root.moveCursor(dx, dy);
         }
@@ -244,8 +251,9 @@ KeyboardPanel {
             spacing: Style.space(10)
 
             Header {
+                id: header
                 width: parent.width
-                title: root.backendUi.label
+                panel: root
                 service: root.voxtype
                 foreground: root.foreground
                 ready: root.ready

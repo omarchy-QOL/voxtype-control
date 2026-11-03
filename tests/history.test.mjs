@@ -35,11 +35,11 @@ service.updateList(JSON.stringify({schema: 1, entries: [{id: "one", text: "exact
 assert.equal(root.entries[0].text, "exact");
 assert.equal(root.warning, "save failed\nbad entry");
 assert.equal(root.error, "");
-assert.throws(() => service.updateList('{"schema":2,"entries":[]}'), /current Voxtype/);
+assert.throws(() => service.updateList('{"schema":2,"entries":[]}'), /current dictation/);
 
 const selectionProcess = {};
 const selectionRoot = { busy: false, error: "stale", notice: "stale",
-  controlPath: "/test/voxtype-control" };
+  controlPath: "/test/dictation-control" };
 const selectionService = vm.createContext({ root: selectionRoot, selectionProcess });
 vm.runInContext(qmlFunction(serviceSource, "copySelection"), selectionService);
 selectionService.copySelection("selected text");
@@ -47,7 +47,7 @@ assert.equal(selectionRoot.error, "");
 assert.equal(selectionRoot.notice, "");
 assert.equal(selectionProcess.pendingText, "selected text");
 assert.deepEqual(Array.from(selectionProcess.command),
-  ["/test/voxtype-control", "history", "copy-selection"]);
+  ["/test/dictation-control", "history", "copy-selection"]);
 assert.equal(selectionProcess.stdinEnabled, true);
 assert.equal(selectionProcess.running, true);
 
@@ -85,12 +85,12 @@ assert.ok(view.includes("onActiveChanged"));
 assert.ok(serviceSource.includes('[root.controlPath, "history", action]'));
 assert.ok(serviceSource.includes('"Transcript copied to clipboard"'));
 const actionProcess = {};
-const actionRoot = { controlPath: "/test/voxtype-control", error: "stale", notice: "stale" };
+const actionRoot = { controlPath: "/test/dictation-control", error: "stale", notice: "stale" };
 const actionService = vm.createContext({ root: actionRoot, actionProcess });
 vm.runInContext(qmlFunction(serviceSource, "runAction"), actionService);
 actionService.runAction("copy", "latest");
 assert.deepEqual(Array.from(actionProcess.command),
-  ["/test/voxtype-control", "history", "copy", "latest"]);
+  ["/test/dictation-control", "history", "copy", "latest"]);
 assert.equal(actionProcess.running, true);
 assert.equal(actionRoot.error, "");
 assert.equal(actionRoot.notice, "");

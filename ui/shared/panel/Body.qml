@@ -8,7 +8,7 @@ Column {
     id: root
 
     required property var panel
-    property alias backendDropdown: backendDropdown
+    property alias modelDropdown: modelDropdown
     property alias unloadButton: unloadButton
     property alias languageDropdown: languageDropdown
     property alias primaryActions: primaryActions
@@ -30,7 +30,7 @@ Column {
         spacing: Style.space(6)
 
         GuardedSearchableDropdown {
-            id: backendDropdown
+            id: modelDropdown
             width: parent.width - unloadButton.width - parent.spacing
             label: "Speech model"
             placeholderText: "Choose an installed model..."
@@ -39,10 +39,10 @@ Column {
             foreground: root.panel.foreground
             fontFamily: root.panel.bar ? root.panel.bar.fontFamily : Style.font.family
             enabled: root.panel.voxtype && root.panel.voxtype.controlAvailable && !root.panel.voxtype.busy
-            hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === 0
+            hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(modelDropdown)
             onHovered: function (hovered) {
                 if (hovered)
-                    root.panel.actionIndex = 0;
+                    root.panel.actionIndex = root.panel.actions.indexOf(modelDropdown);
             }
             onChanged: function (value) {
                 root.panel.draftTouched = true;
@@ -55,7 +55,7 @@ Column {
 
         PanelActionButton {
             id: unloadButton
-            size: backendDropdown.rowHeight
+            size: modelDropdown.rowHeight
             fontSize: Style.font.icon
             anchors.bottom: parent.bottom
             iconText: "\uf052"
@@ -65,10 +65,10 @@ Column {
             bordered: true
             enabled: root.panel.voxtype && root.panel.voxtype.loaded && !root.panel.voxtype.busy && !root.panel.voxtype.dictating
             focusable: false
-            hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === 1
+            hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(unloadButton)
             onHovered: function (hovered) {
                 if (hovered)
-                    root.panel.actionIndex = 1;
+                    root.panel.actionIndex = root.panel.actions.indexOf(unloadButton);
             }
             onClicked: root.panel.unloadingModel = true
         }
@@ -84,10 +84,10 @@ Column {
         foreground: root.panel.foreground
         fontFamily: root.panel.bar ? root.panel.bar.fontFamily : Style.font.family
         enabled: root.panel.voxtype && root.panel.voxtype.controlAvailable && !root.panel.voxtype.busy && root.panel.selectedModel && root.panel.selectedModel.codes.length > 1
-        hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === 2
+        hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(languageDropdown)
         onHovered: function (hovered) {
             if (hovered)
-                root.panel.actionIndex = 2;
+                root.panel.actionIndex = root.panel.actions.indexOf(languageDropdown);
         }
         onChanged: function (value) {
             root.panel.draftTouched = true;
@@ -116,10 +116,10 @@ Column {
             enabled: root.panel.canApply
             opacity: enabled || spinning ? 1 : 0.45
             bordered: true
-            hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === 3
+            hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(applyButton)
             onHovered: function (hovered) {
                 if (hovered)
-                    root.panel.actionIndex = 3;
+                    root.panel.actionIndex = root.panel.actions.indexOf(applyButton);
             }
             foreground: root.panel.foreground
             fontFamily: root.panel.fontFamily

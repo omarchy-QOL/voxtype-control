@@ -1,8 +1,8 @@
 # Voxtype Control for Omarchy
 
-Local dictation controls in the Omarchy bar. Choose a speech model, switch
-spoken languages, recover completed transcripts, and edit word replacements
-without leaving your desktop.
+Local dictation controls in the Omarchy bar. Switch between Voxtype and Hex,
+choose a speech model and spoken language, recover completed transcripts, and
+edit word replacements without leaving your desktop.
 
 ## Screenshot
 
@@ -13,8 +13,9 @@ Coming soon.
 ## Install
 
 Requires Omarchy Quattro, Voxtype with local models, and the separate
-`voxtype-control` helper (schema 4). The helper and models are **not bundled**;
-this plugin needs an already-configured Voxtype setup.
+`dictation-control` helper (schema 5). The helper and models are **not
+bundled**; this plugin needs an already-configured Voxtype setup. Hex is
+optional: install `hex-bin` and run `hex model install` to offer it.
 
 ```bash
 omarchy plugin add https://github.com/omarchy-QOL/voxtype-control --enable
@@ -22,7 +23,8 @@ omarchy plugin add https://github.com/omarchy-QOL/voxtype-control --enable
 
 ### Stock dictation indicator
 
-This plugin does not automatically replace the stock dictation indicator.
+This plugin does not automatically replace the stock dictation indicator on
+Omarchy versions that still ship one.
 To show only the plugin microphone, remove `Dictation` from the
 `omarchy.indicators` entry's `items` array in `~/.config/omarchy/shell.json`.
 Disabling or removing the plugin does not restore that entry automatically
@@ -31,6 +33,9 @@ Disabling or removing the plugin does not restore that entry automatically
 ## Use
 
 - **Left-click** the microphone to open model and language controls.
+- Choose **Voxtype** or **Hex** in the header dropdown to switch dictation. The
+  old backend unloads first and the new one loads its last model. The panel,
+  replacements and transcript history stay the same.
 - Choose an installed model and language, then select **Apply model/language**.
 - Click **[C]opy last transcript**, or press `c`, to copy the newest completed
   transcript directly to the clipboard, without opening history. This uses the
@@ -45,10 +50,11 @@ Disabling or removing the plugin does not restore that entry automatically
   five-second desktop notification, then ask whether to close the plugin. **Yes**
   is selected by default so Enter closes it and restores the previous focus;
   use `h`/`l` to choose, or press Esc for **No**.
-- **Right-click**, or use the `[v]oxtype tui` footer shortcut, to open
-  Voxtype's terminal menu for model downloads and configuration.
+- **Right-click**, or use the first footer shortcut, to manage models:
+  `[v]oxtype tui` opens Voxtype's terminal menu and `[m]odels` opens Hex's model
+  picker.
 
-The footer contains `[v]oxtype tui`, `[s]ettings`,
+The footer contains that shortcut, `[s]ettings`,
 `[r]eplacements` and `[t]ranscripts`. Bracketed keys use the system theme's
 yellow. Click a label or press its key; Tab and arrow navigation also work.
 A divider separates the footer. The panel fits the footer and the two equally
@@ -56,6 +62,7 @@ high primary buttons without clipping their labels.
 
 Parakeet v3 recognizes languages automatically. Canary requires **English** or
 **German**; select one before loading. Available choices depend on the model.
+Hex has no Canary support.
 
 The header shows the current model; dropdowns show your pending selection.
 The GPU row identifies hardware, not a guarantee of GPU acceleration.
@@ -85,7 +92,7 @@ Inside the panel:
 | `Tab` / `Shift+Tab` | Next / previous control   |
 | `Enter`             | Activate or open search   |
 | `c`                 | Copy last transcript      |
-| `v`                 | Open TUI                  |
+| `v` or `m`          | Voxtype TUI or Hex models |
 | `s`                 | Open settings             |
 | `r`                 | Edit replacements         |
 | `t`                 | Open transcript history   |
@@ -115,7 +122,8 @@ entries keep their order. Finish dictation before saving.
 ## Transcript privacy and delivery
 
 The Workflow helper saves each completed, nonempty final transcript before
-Voxtype attempts output. It uses private atomic JSON files under
+either backend attempts output. Hex's own history stays off so there is one
+store. It uses private atomic JSON files under
 `~/.local/state/voxtype-control/transcripts/`; audio is never retained and
 history is never synced automatically. Entries do not expire silently.
 
