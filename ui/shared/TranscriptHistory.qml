@@ -3,8 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import qs.Commons
 import qs.Ui
-import "../components" as Components
-import "../logic/TranscriptHistory.js" as HistoryLogic
+import "../../logic/TranscriptHistory.js" as HistoryLogic
 
 PanelKeyCatcher {
   id: root
@@ -199,7 +198,7 @@ PanelKeyCatcher {
       }
     }
 
-    Components.NoticeSection {
+    NoticeSection {
       width: parent.width
       message: root.service.error || root.service.warning
       warning: !root.service.error

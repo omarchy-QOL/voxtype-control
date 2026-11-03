@@ -6,6 +6,7 @@ Row {
   property string model: ""
   property string stateLabel: ""
   property color stateColor: Color.foreground
+  property string toolHint: ""
   property string fontFamily: Style.font.family
   spacing: Style.space(24)
 
@@ -28,7 +29,7 @@ Row {
   }
 
   Text {
-    text: "L-click: Menu\nR-click:  TUI"
+    text: "L-click: Menu\n" + root.toolHint
     textFormat: Text.PlainText
     horizontalAlignment: Text.AlignRight
     color: Color.tooltip.text

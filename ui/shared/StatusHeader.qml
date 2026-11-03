@@ -6,6 +6,7 @@ Item {
     id: root
 
     required property var service
+    property string title: ""
     property color foreground: Color.foreground
     property color dim: Qt.darker(foreground, 1.55)
     property color ready: Color.accent
@@ -34,7 +35,7 @@ Item {
         Column {
             spacing: Style.space(2)
             Text {
-                text: "Voxtype"
+                text: root.title
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.title

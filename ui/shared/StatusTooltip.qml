@@ -10,6 +10,7 @@ PopupWindow {
   property alias model: content.model
   property alias stateLabel: content.stateLabel
   property alias stateColor: content.stateColor
+  property alias toolHint: content.toolHint
   property alias fontFamily: content.fontFamily
   property bool hovered: false
   property bool ready: false

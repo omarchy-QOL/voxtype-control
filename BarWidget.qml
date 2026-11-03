@@ -4,7 +4,8 @@ import Quickshell
 import Quickshell.Io
 import qs.Commons
 import qs.Ui
-import "components" as Components
+import "ui/shared" as Shared
+import "ui/voxtype" as Voxtype
 
 Panel {
     id: root
@@ -14,6 +15,7 @@ Panel {
 
     property bool editingReplacements: false
     readonly property var voxtype: bar && bar.shell ? bar.shell.serviceFor(moduleName) : null
+    readonly property var backendUi: voxtypeBackend
     readonly property color foreground:
         bar && bar.barForeground ? bar.barForeground : Color.foreground
     readonly property color dim: Qt.darker(foreground, 1.55)
@@ -27,13 +29,13 @@ Panel {
     function launchConfiguration() {
         close();
         if (voxtype)
-            Quickshell.execDetached(["omarchy-launch-terminal", "-e", voxtype.controlPath, "configure"]);
+            Quickshell.execDetached(backendUi.toolCommand(voxtype.controlPath));
     }
 
     function launchConfigFile() {
         close();
         if (voxtype)
-            Quickshell.execDetached([voxtype.controlPath, "edit-config"]);
+            Quickshell.execDetached(backendUi.settingsCommand(voxtype.controlPath));
     }
 
     function launchReplacements() {
@@ -56,7 +58,11 @@ Panel {
     implicitWidth: button.implicitWidth
     implicitHeight: button.implicitHeight
 
-    StateColors {
+    Voxtype.Backend {
+        id: voxtypeBackend
+    }
+
+    Shared.StateColors {
         id: stateColors
     }
 
@@ -85,7 +91,7 @@ Panel {
         text: root.statusIcon
         foreground: root.statusColor
         iconComponent: Component {
-            ReloadIcon {
+            Shared.ReloadIcon {
                 text: root.statusIcon
                 color: root.statusColor
                 fontFamily: button.fontFamily
@@ -104,23 +110,25 @@ Panel {
         }
     }
 
-    StatusTooltip {
+    Shared.StatusTooltip {
         id: hoverTooltip
         anchorItem: button
         bar: root.bar
         model: root.voxtype ? root.voxtype.modelLabel : "No selected model"
         stateLabel: root.voxtype ? root.voxtype.stateLabel : "Unavailable"
         stateColor: root.stateColor
+        toolHint: root.backendUi.toolHint
         fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
         hovered: button.tooltipHovered && !root.opened && !(root.bar && root.bar.activePopout)
     }
 
-    Components.ControlPanel {
+    Shared.ControlPanel {
         id: controlPanel
         anchorItem: button
         panelOwner: root
         bar: root.bar
         voxtype: root.voxtype
+        backendUi: root.backendUi
         editingReplacements: root.editingReplacements
         foreground: root.foreground
         dim: root.dim

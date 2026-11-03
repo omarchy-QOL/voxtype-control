@@ -26,7 +26,7 @@ assert.equal(logic.retainedId(entries, "missing"), "new");
 assert.equal(logic.retainedId([], "old"), "");
 
 const serviceSource = fs.readFileSync(
-  new URL("../history/TranscriptHistoryService.qml", import.meta.url), "utf8");
+  new URL("../services/TranscriptHistoryService.qml", import.meta.url), "utf8");
 const root = { entries: [], warning: "stale", error: "stale" };
 const service = vm.createContext({ root });
 vm.runInContext(qmlFunction(serviceSource, "updateList"), service);
@@ -52,7 +52,7 @@ assert.equal(selectionProcess.stdinEnabled, true);
 assert.equal(selectionProcess.running, true);
 
 const view = fs.readFileSync(
-  new URL("../history/TranscriptHistory.qml", import.meta.url), "utf8");
+  new URL("../ui/shared/TranscriptHistory.qml", import.meta.url), "utf8");
 const activate = qmlFunction(view, "activate");
 assert.ok(activate.includes("service.refresh"));
 assert.ok(!activate.includes("copy"));

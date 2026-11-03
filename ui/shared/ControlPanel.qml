@@ -2,13 +2,13 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 import qs.Ui
-import "../history" as History
 
 KeyboardPanel {
     id: root
 
     required property var panelOwner
     required property var voxtype
+    required property var backendUi
     property bool editingReplacements: false
     property color foreground: Color.foreground
     property color dim: Qt.darker(foreground, 1.55)
@@ -116,13 +116,14 @@ KeyboardPanel {
             root.closeRequested();
             return;
         }
-        var action = ({
-                c: copyLastButton,
-                v: configureShortcut,
-                s: settingsShortcut,
-                r: replacementsShortcut,
-                t: historyShortcut
-            })[text.toLowerCase()];
+        var actions = {
+            c: copyLastButton,
+            s: settingsShortcut,
+            r: replacementsShortcut,
+            t: historyShortcut
+        };
+        actions[root.backendUi.toolShortcut] = configureShortcut;
+        var action = actions[text.toLowerCase()];
         if (action && action.enabled)
             action.clicked();
     }
@@ -161,7 +162,7 @@ KeyboardPanel {
         active: root.open && root.showingHistory
         visible: active
         sourceComponent: Component {
-            History.TranscriptHistory {
+            TranscriptHistory {
                 width: historyLoader.width
                 service: root.voxtype.history
                 foreground: root.foreground
@@ -234,6 +235,7 @@ KeyboardPanel {
 
             StatusHeader {
                 width: parent.width
+                title: root.backendUi.label
                 service: root.voxtype
                 foreground: root.foreground
                 ready: root.ready
@@ -400,8 +402,8 @@ KeyboardPanel {
 
                 FooterShortcut {
                     id: configureShortcut
-                    shortcut: "v"
-                    suffix: "oxtype tui"
+                    shortcut: root.backendUi.toolShortcut
+                    suffix: root.backendUi.toolSuffix
                     shortcutColor: root.warning
                     foreground: root.dim
                     fontFamily: root.fontFamily

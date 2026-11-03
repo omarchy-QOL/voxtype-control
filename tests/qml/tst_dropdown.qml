@@ -3,8 +3,7 @@ import QtTest
 import qs.Commons
 import qs.Ui
 import "../.." as Plugin
-import "../../components" as Components
-import "../../history" as History
+import "../../ui/shared" as Components
 
 TestCase {
   id: test
@@ -43,8 +42,8 @@ TestCase {
     busyColor: colors.warning
   }
 
-  Plugin.StateColors { id: colors; theme.path: "" }
-  Plugin.ReloadIcon {
+  Components.StateColors { id: colors; theme.path: "" }
+  Components.ReloadIcon {
     id: reloadIcon
     width: 18
     height: 18
@@ -61,12 +60,13 @@ TestCase {
     service: service
     warning: colors.warning
   }
-  Plugin.TooltipContent {
+  Components.TooltipContent {
     id: tooltip
     visible: false
     model: "Parakeet TDT v3 FP16"
     stateLabel: "Ready"
     stateColor: colors.ready
+    toolHint: "R-click:  TUI"
   }
 
   Plugin.Service {
@@ -95,7 +95,7 @@ TestCase {
     }
   }
 
-  History.TranscriptHistory {
+  Components.TranscriptHistory {
     id: historyView
     visible: false
     width: 440

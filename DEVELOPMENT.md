@@ -40,9 +40,10 @@ reporting after the identity change.
 ## Structure
 
 Root `BarWidget.qml` and `Service.qml` remain Omarchy host entry points.
-`components/` owns panel presentation, `services/` owns model/controller IO,
-`history/` owns transcript state and UI, and `logic/` contains pure selection
-helpers. The service has one host-managed lifetime; panels remain per screen.
+`ui/shared/` owns panel presentation, `ui/voxtype/` owns what the panel shows
+and launches for Voxtype, `services/` owns controller and transcript IO, and
+`logic/` contains pure helpers. The service has one host-managed lifetime;
+panels remain per screen.
 No second Quickshell process or plugin-local mutable state is created.
 
 `FooterShortcut.qml` renders unboxed clickable shortcut labels. Bracketed

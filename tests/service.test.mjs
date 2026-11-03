@@ -93,9 +93,9 @@ context.finishAction(true, "");
 assert.equal(context.error, "");
 
 const widget = fs.readFileSync(new URL("../BarWidget.qml", import.meta.url), "utf8");
-const controls = fs.readFileSync(new URL("../components/ControlPanel.qml", import.meta.url), "utf8");
+const controls = fs.readFileSync(new URL("../ui/shared/ControlPanel.qml", import.meta.url), "utf8");
 const statusHeader = fs.readFileSync(
-  new URL("../components/StatusHeader.qml", import.meta.url), "utf8");
+  new URL("../ui/shared/StatusHeader.qml", import.meta.url), "utf8");
 function qmlFunction(source, name) {
   const start = source.indexOf(`function ${name}(`);
   assert.notEqual(start, -1, name);
@@ -183,16 +183,19 @@ assert.ok(controls.includes('enabled: root.historyService && !root.historyServic
 console.log("ok - latest transcript copy uses the shared history path, independent of model state and search");
 assert.ok(controls.includes("checkColor: root.ready"));
 assert.ok(!widget.includes("slotSize: Style.bar.statusSlot"));
+const voxtypeUi = fs.readFileSync(new URL("../ui/voxtype/Backend.qml", import.meta.url), "utf8");
 const launch = vm.createContext({
+  backendUi: {},
   voxtype: { controlPath: "/test/voxtype-control", unload() { throw new Error("TUI must not unload"); } },
   close() {}, Quickshell: { execDetached(argv) { launch.launched = argv; } },
 });
 vm.runInContext(qmlFunction(widget, "launchConfiguration"), launch);
+vm.runInContext(`backendUi.toolCommand = ${voxtypeUi.match(/function toolCommand\([^]*?\n  \}/)[0].replace("function toolCommand", "function")}`, launch);
 launch.launchConfiguration();
 assert.equal(launch.launched.join(" "), "omarchy-launch-terminal -e /test/voxtype-control configure");
 assert.ok(controls.includes('id: unloadButton'));
 assert.ok(controls.includes('tooltipText: "Unload current model; keep its files"'));
-assert.ok(controls.includes('suffix: "oxtype tui"'));
+assert.ok(voxtypeUi.includes('toolSuffix: "oxtype tui"'));
 console.log("ok - language policies, draft validation, state and process requests");
 
 const models = [
@@ -203,7 +206,7 @@ context.modelOptions = models;
 const localFilter = source.match(/readonly property var localModels: (.*)/)[1];
 assert.equal(vm.runInContext(localFilter, context).length, 1);
 assert.equal(vm.runInContext(localFilter, context)[0].value, "p");
-const picker = fs.readFileSync(new URL("../components/UnloadModel.qml", import.meta.url), "utf8");
+const picker = fs.readFileSync(new URL("../ui/shared/UnloadModel.qml", import.meta.url), "utf8");
 assert.ok(picker.includes('onCloseRequested: root.cancelled()'));
 assert.ok(picker.includes('service.modelLabel + "?"'));
 assert.ok(picker.includes('property int choice: 1'));
@@ -236,7 +239,8 @@ assert.ok(controls.includes("controlRows: [[backendDropdown, unloadButton]"));
 assert.ok(controls.includes("readonly property var actions: [].concat.apply([], controlRows)"));
 assert.ok(!controls.includes('text: "h/j/k/l: move"'));
 assert.equal((controls.match(/FooterShortcut \{/g) || []).length, 4);
-for (const label of ['suffix: "oxtype tui"', 'suffix: "ettings"',
+assert.ok(controls.includes("suffix: root.backendUi.toolSuffix"));
+for (const label of ['suffix: "ettings"',
   'suffix: "eplacements"', 'suffix: "ranscripts"']) assert.ok(controls.includes(label));
 assert.ok(controls.includes("[configureShortcut, settingsShortcut, replacementsShortcut, historyShortcut]"));
 assert.ok(controls.includes("shortcutFooter.implicitWidth + root.horizontalInset"));
@@ -265,7 +269,7 @@ assert.equal(launch.draftModelId, "pending-model");
 assert.ok(controls.includes("open: root.panelOwner.opened && !root.editingReplacements"));
 let closes = 0;
 const shortcuts = vm.createContext({ root: {
-    closeRequested() { closes++; }, actionIndex: 0,
+    backendUi: { toolShortcut: "v" }, closeRequested() { closes++; }, actionIndex: 0,
     actions: ["model", "unload", "language", "apply", "copy", "tui", "settings", "replacements", "history"],
     controlRows: [["model", "unload"], ["language"], ["apply", "copy"],
       ["tui", "settings", "replacements", "history"]], focusControls() {},
