@@ -20,7 +20,7 @@ done
 # Host QtObject properties and Quickshell's exit-status enum lack complete type metadata.
 "$qt_tools/qmllint" -I "$test_root" -I /usr/lib/qt6/qml \
   --missing-property disable --signal-handler-parameters disable \
-  "$ROOT"/*.qml "$ROOT"/ui/*/*.qml "$ROOT"/services/*.qml
+  "$ROOT"/*.qml "$ROOT"/ui/voxtype/*.qml "$ROOT"/ui/shared/*/*.qml "$ROOT"/services/*.qml
 node "$ROOT/tests/service.test.mjs"
 node "$ROOT/tests/history.test.mjs"
 mkdir "$test_root/runtime"

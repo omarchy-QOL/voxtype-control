@@ -3,7 +3,9 @@ import QtTest
 import qs.Commons
 import qs.Ui
 import "../.." as Plugin
-import "../../ui/shared" as Components
+import "../../ui/shared/bar" as BarUi
+import "../../ui/shared/panel" as PanelUi
+import "../../ui/shared/transcripts" as TranscriptUi
 
 TestCase {
   id: test
@@ -32,7 +34,7 @@ TestCase {
   property var controlRows: [[dropdown, notice], [tooltip]]
   readonly property var actions: [].concat.apply([], controlRows)
 
-  Components.ApplySelectionButton {
+  PanelUi.ApplySelectionButton {
     id: applyButton
     visible: false
     width: 400
@@ -42,8 +44,8 @@ TestCase {
     busyColor: colors.warning
   }
 
-  Components.StateColors { id: colors; theme.path: "" }
-  Components.ReloadIcon {
+  BarUi.StateColors { id: colors; theme.path: "" }
+  BarUi.ReloadIcon {
     id: reloadIcon
     width: 18
     height: 18
@@ -53,20 +55,64 @@ TestCase {
       : service.reloading ? colors.warning
       : service.readyFlash ? colors.ready : "#eeeeee"
   }
-  Components.StatusHeader {
+  PanelUi.Header {
     id: panelHeader
     visible: false
     width: 320
     service: service
     warning: colors.warning
   }
-  Components.TooltipContent {
+  BarUi.TooltipContent {
     id: tooltip
     visible: false
     model: "Parakeet TDT v3 FP16"
     stateLabel: "Ready"
     stateColor: colors.ready
     toolHint: "R-click:  TUI"
+  }
+
+  QtObject {
+    id: panelFixture
+    property var panelOwner: QtObject { property bool opened: true }
+    property var voxtype: service
+    property var backendUi: QtObject {
+      readonly property string toolShortcut: "v"
+      readonly property string toolSuffix: "oxtype tui"
+    }
+    property var historyService: null
+    property var actions: []
+    property int actionIndex: 0
+    property var bar: null
+    property color foreground: "#ffffff"
+    property color dim: "#888888"
+    property color urgent: "#ff0000"
+    property color ready: "#00ff00"
+    property color warning: "#ffff00"
+    property string fontFamily: "monospace"
+    property string draftModelId: ""
+    property string draftLanguage: ""
+    property var languageOptions: []
+    property var selectedModel: null
+    property bool canApply: false
+    property bool showLastCopyNotice: false
+    property int tools: 0
+    signal configureRequested
+    function focusControls() {}
+    function openHistory() {}
+    onConfigureRequested: tools++
+  }
+
+  PanelUi.Body {
+    id: bodyFixture
+    visible: false
+    width: 360
+    panel: panelFixture
+  }
+
+  PanelUi.Footer {
+    id: footerFixture
+    visible: false
+    panel: panelFixture
   }
 
   Plugin.Service {
@@ -87,7 +133,7 @@ TestCase {
       active: false
       width: item ? Math.min(Style.space(440), item.implicitWidth) : 320
       sourceComponent: Component {
-        Components.UnloadModel {
+        PanelUi.UnloadModel {
           service: test.fixtureService
           onCancelled: unloadPicker.active = false
         }
@@ -95,7 +141,7 @@ TestCase {
     }
   }
 
-  Components.TranscriptHistory {
+  TranscriptUi.TranscriptHistory {
     id: historyView
     visible: false
     width: 440
@@ -138,23 +184,23 @@ TestCase {
     y: 120
     z: 100
     spacing: Style.space(12)
-    Components.FooterShortcut {
+    PanelUi.FooterShortcut {
       id: footerTui
       shortcut: "v"; suffix: "oxtype tui"
       foreground: "#888888"; shortcutColor: test.footerYellow
       onClicked: test.footerClicks++
     }
-    Components.FooterShortcut {
+    PanelUi.FooterShortcut {
       id: footerSettings
       shortcut: "s"; suffix: "ettings"
       foreground: "#888888"; shortcutColor: test.footerYellow
     }
-    Components.FooterShortcut {
+    PanelUi.FooterShortcut {
       id: footerReplacements
       shortcut: "r"; suffix: "eplacements"
       foreground: "#888888"; shortcutColor: test.footerYellow
     }
-    Components.FooterShortcut {
+    PanelUi.FooterShortcut {
       id: footerTranscripts
       shortcut: "t"; suffix: "ranscripts"
       foreground: "#888888"; shortcutColor: test.footerYellow
@@ -170,14 +216,14 @@ TestCase {
     width: Math.max(Style.space(360), shortcutFooterFixture.implicitWidth, naturalWidth)
     height: Math.max(compactApply.implicitHeight, copyLast.implicitHeight)
     spacing: Style.space(6)
-    Components.ApplySelectionButton {
+    PanelUi.ApplySelectionButton {
       id: compactApply
       width: (parent.width - parent.spacing) * implicitWidth / (compactApply.implicitWidth + copyLast.implicitWidth)
       height: parent.height
       label: "Apply model/language"
       bordered: true
     }
-    Components.CopyLastTranscriptButton {
+    PanelUi.CopyLastTranscriptButton {
       id: copyLast
       width: parent.width - compactApply.width - parent.spacing
       height: parent.height
@@ -226,7 +272,7 @@ TestCase {
     passed++
   }
 
-  Components.NoticeSection {
+  PanelUi.NoticeSection {
     id: notice
     width: 320
     message: service.message
@@ -234,7 +280,7 @@ TestCase {
     warningColor: colors.warning
   }
 
-  Components.GuardedSearchableDropdown {
+  PanelUi.GuardedSearchableDropdown {
     id: dropdown
     width: 300
     label: "Models"
@@ -292,6 +338,20 @@ TestCase {
     compare(dropdown.hasCursor, true)
     keyboardCursor = false
     compare(dropdown.hasCursor, false)
+    passed++
+  }
+
+  function test_panel_sections_expose_the_controls_the_panel_navigates() {
+    for (var control of [bodyFixture.backendDropdown, bodyFixture.unloadButton,
+        bodyFixture.languageDropdown, bodyFixture.applyButton, bodyFixture.copyLastButton,
+        footerFixture.configureShortcut, footerFixture.settingsShortcut,
+        footerFixture.replacementsShortcut, footerFixture.historyShortcut])
+      verify(control)
+    compare(footerFixture.configureShortcut.shortcut, "v")
+    compare(footerFixture.configureShortcut.suffix, "oxtype tui")
+    footerFixture.configureShortcut.enabled = true
+    footerFixture.configureShortcut.clicked()
+    compare(panelFixture.tools, 1)
     passed++
   }
 
@@ -500,7 +560,7 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 29) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 30) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 

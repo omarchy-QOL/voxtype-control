@@ -93,9 +93,11 @@ context.finishAction(true, "");
 assert.equal(context.error, "");
 
 const widget = fs.readFileSync(new URL("../BarWidget.qml", import.meta.url), "utf8");
-const controls = fs.readFileSync(new URL("../ui/shared/ControlPanel.qml", import.meta.url), "utf8");
+const controls = ["ControlPanel", "Body", "Footer"].map((name) => fs.readFileSync(
+  new URL(`../ui/shared/panel/${name}.qml`, import.meta.url), "utf8").replace(/root\.panel\./g, "root."))
+  .join("\n");
 const statusHeader = fs.readFileSync(
-  new URL("../ui/shared/StatusHeader.qml", import.meta.url), "utf8");
+  new URL("../ui/shared/panel/Header.qml", import.meta.url), "utf8");
 function qmlFunction(source, name) {
   const start = source.indexOf(`function ${name}(`);
   assert.notEqual(start, -1, name);
@@ -178,7 +180,7 @@ latest.copyLastTranscript();
 assert.equal(copiedIds.length, 1);
 assert.ok(controls.includes('[applyButton, copyLastButton]'));
 assert.ok(controls.includes('height: Math.max(applyButton.implicitHeight, copyLastButton.implicitHeight)'));
-assert.ok(controls.includes('primaryActions.naturalWidth + root.horizontalInset'));
+assert.ok(controls.includes('body.primaryActions.naturalWidth + root.horizontalInset'));
 assert.ok(controls.includes('enabled: root.historyService && !root.historyService.busy'));
 console.log("ok - latest transcript copy uses the shared history path, independent of model state and search");
 assert.ok(controls.includes("checkColor: root.ready"));
@@ -206,7 +208,7 @@ context.modelOptions = models;
 const localFilter = source.match(/readonly property var localModels: (.*)/)[1];
 assert.equal(vm.runInContext(localFilter, context).length, 1);
 assert.equal(vm.runInContext(localFilter, context)[0].value, "p");
-const picker = fs.readFileSync(new URL("../ui/shared/UnloadModel.qml", import.meta.url), "utf8");
+const picker = fs.readFileSync(new URL("../ui/shared/panel/UnloadModel.qml", import.meta.url), "utf8");
 assert.ok(picker.includes('onCloseRequested: root.cancelled()'));
 assert.ok(picker.includes('service.modelLabel + "?"'));
 assert.ok(picker.includes('property int choice: 1'));
@@ -243,9 +245,9 @@ assert.ok(controls.includes("suffix: root.backendUi.toolSuffix"));
 for (const label of ['suffix: "ettings"',
   'suffix: "eplacements"', 'suffix: "ranscripts"']) assert.ok(controls.includes(label));
 assert.ok(controls.includes("[configureShortcut, settingsShortcut, replacementsShortcut, historyShortcut]"));
-assert.ok(controls.includes("shortcutFooter.implicitWidth + root.horizontalInset"));
+assert.ok(controls.includes("footer.implicitWidth + root.horizontalInset"));
 assert.ok(controls.includes('objectName: "voxtypeFooterSeparator"'));
-assert.ok(controls.indexOf('objectName: "voxtypeFooterSeparator"') < controls.indexOf("id: shortcutFooter"));
+assert.ok(controls.indexOf('objectName: "voxtypeFooterSeparator"') < controls.indexOf("id: footer"));
 assert.ok(!controls.includes("id: actionRow"));
 assert.ok(!controls.includes("configureButton"));
 assert.equal((controls.match(/shortcutColor: root.warning/g) || []).length, 5);
@@ -283,7 +285,7 @@ assert.equal(clicks - previousClicks, 6);
 shortcuts.activateShortcut("q");
 shortcuts.activateShortcut("Q");
 assert.equal(closes, 2);
-assert.ok(controls.includes('blocked: root.unloadingModel || backendDropdown.popupOpen || languageDropdown.popupOpen'));
+assert.ok(controls.includes('blocked: root.unloadingModel || root.backendDropdown.popupOpen || root.languageDropdown.popupOpen'));
 button.enabled = false;
 shortcuts.activateShortcut("r");
 shortcuts.activateShortcut("C");

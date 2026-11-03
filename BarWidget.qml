@@ -4,7 +4,8 @@ import Quickshell
 import Quickshell.Io
 import qs.Commons
 import qs.Ui
-import "ui/shared" as Shared
+import "ui/shared/bar" as BarUi
+import "ui/shared/panel" as PanelUi
 import "ui/voxtype" as Voxtype
 
 Panel {
@@ -62,7 +63,7 @@ Panel {
         id: voxtypeBackend
     }
 
-    Shared.StateColors {
+    BarUi.StateColors {
         id: stateColors
     }
 
@@ -91,7 +92,7 @@ Panel {
         text: root.statusIcon
         foreground: root.statusColor
         iconComponent: Component {
-            Shared.ReloadIcon {
+            BarUi.ReloadIcon {
                 text: root.statusIcon
                 color: root.statusColor
                 fontFamily: button.fontFamily
@@ -110,7 +111,7 @@ Panel {
         }
     }
 
-    Shared.StatusTooltip {
+    BarUi.StatusTooltip {
         id: hoverTooltip
         anchorItem: button
         bar: root.bar
@@ -122,7 +123,7 @@ Panel {
         hovered: button.tooltipHovered && !root.opened && !(root.bar && root.bar.activePopout)
     }
 
-    Shared.ControlPanel {
+    PanelUi.ControlPanel {
         id: controlPanel
         anchorItem: button
         panelOwner: root

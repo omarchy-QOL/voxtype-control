@@ -51,8 +51,10 @@ assert.deepEqual(Array.from(selectionProcess.command),
 assert.equal(selectionProcess.stdinEnabled, true);
 assert.equal(selectionProcess.running, true);
 
-const view = fs.readFileSync(
-  new URL("../ui/shared/TranscriptHistory.qml", import.meta.url), "utf8");
+const view = ["TranscriptHistory", "TranscriptSearchField", "TranscriptList", "TranscriptPreview",
+  "TranscriptHints", "TranscriptConfirmDialog"].map((name) => fs.readFileSync(
+  new URL(`../ui/shared/transcripts/${name}.qml`, import.meta.url), "utf8")
+  .replace(/(?:root|transcriptList)\.history\./g, "root.")).join("\n");
 const activate = qmlFunction(view, "activate");
 assert.ok(activate.includes("service.refresh"));
 assert.ok(!activate.includes("copy"));
