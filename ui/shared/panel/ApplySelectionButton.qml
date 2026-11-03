@@ -38,6 +38,7 @@ Button {
     }
     Text {
       id: caption
+      objectName: "applyCaption"
       width: parent.width - check.width - parent.spacing
       anchors.verticalCenter: parent.verticalCenter
       text: root.label

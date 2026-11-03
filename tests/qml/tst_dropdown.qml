@@ -370,6 +370,17 @@ TestCase {
     passed++
   }
 
+  function test_primary_labels_fit_at_their_natural_panel_width() {
+    bodyFixture.visible = true
+    bodyFixture.width = bodyFixture.primaryActions.naturalWidth
+    wait(0)
+    compare(findChild(bodyFixture.applyButton, "applyCaption").truncated, false)
+    compare(findChild(bodyFixture.copyLastButton, "copyLastCaption").truncated, false)
+    bodyFixture.visible = false
+    bodyFixture.width = 360
+    passed++
+  }
+
   function test_follower_wins_over_older_poll() {
     service.updateFollower('{"alt":"recording"}')
     service.updateStatus('{"schema":5,"backend":"voxtype","state":"idle"}')
@@ -575,7 +586,7 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 31) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 32) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 

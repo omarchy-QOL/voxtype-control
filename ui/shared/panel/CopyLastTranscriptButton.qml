@@ -30,6 +30,7 @@ Button {
     }
     Text {
       id: caption
+      objectName: "copyLastCaption"
       width: parent.width - shortcut.width
       text: "opy last transcript"
       textFormat: Text.PlainText
