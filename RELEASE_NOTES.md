@@ -14,6 +14,12 @@ Local release candidate on `dev`. Not published or submitted to the marketplace.
 - Show Switching in theme yellow in the microphone hover tooltip; keep Ready
   green.
 - Align widget service lookup and popup routing with the new manifest ID.
+- Add transcript scrolling, copy-on-selection, copy feedback, and a default-yes
+  close prompt after full transcript copies.
+- Require confirmation for transcript deletion through `Ctrl+D` and
+  `Ctrl+Shift+D`.
+- Pulse the microphone yellow on recording failures, accepting failure reports
+  under both the current and previous plugin IDs.
 
 ## Plugin identity
 
@@ -32,14 +38,12 @@ This candidate does not change or restart capture or ASR services.
 - Native plugin manifest validation and Qt 6 lint checks.
 - JavaScript tests for shortcut dispatch, layout, ID consistency, and shared
   latest-transcript copying.
-- 25 isolated Quickshell/QML runtime cases, including equal-height buttons,
-  label fit, themed shortcut colors, and the two-line hover tooltip.
+- 29 isolated Quickshell/QML runtime cases, including equal-height buttons,
+  label fit, themed shortcut colors, the two-line hover tooltip, transcript
+  selection and copy confirmation, and recording-failure feedback.
 - Live UI and clipboard acceptance for the UI changes using the existing
   installation. The new identity still requires an isolated installation
   acceptance check before promotion.
-
-The candidate excludes the separate unfinished transcript-viewer redesign and
-recording-failure pulse work left uncommitted in the development checkout.
 
 ## Promotion
 

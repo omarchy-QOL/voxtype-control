@@ -20,8 +20,11 @@ TestCase {
   property int statusRefreshes: 0
   property int historyRefreshes: 0
   property int historyCopies: 0
+  property int historySelectionCopies: 0
+  property string historySelectionText: ""
   property int historyDeletes: 0
   property int historyClears: 0
+  property int historyPanelCloses: 0
   property string historyQuery: ""
   property int footerClicks: 0
   property int copyLastClicks: 0
@@ -46,8 +49,9 @@ TestCase {
     width: 18
     height: 18
     text: "󰍬"
-    pulsing: service.reloading
-    color: service.reloading ? colors.warning
+    pulsing: service.reloading || service.recordingFailure
+    color: service.recordingFailure ? colors.warning
+      : service.reloading ? colors.warning
       : service.readyFlash ? colors.ready : "#eeeeee"
   }
   Components.StatusHeader {
@@ -96,6 +100,7 @@ TestCase {
     visible: false
     width: 440
     service: historyFixture
+    onPanelCloseRequested: test.historyPanelCloses++
   }
 
   QtObject {
@@ -105,8 +110,14 @@ TestCase {
     property string error: ""
     property string warning: ""
     property string notice: ""
+    signal copied(string transcriptId)
+    signal changed()
     function refresh(query) { test.historyRefreshes++; test.historyQuery = query }
     function copy(id) { test.historyCopies++; test.historyQuery = id }
+    function copySelection(text) {
+      test.historySelectionCopies++
+      test.historySelectionText = text
+    }
     function remove(id) { test.historyDeletes++; test.historyQuery = id }
     function clear() { test.historyClears++ }
   }
@@ -358,32 +369,126 @@ TestCase {
     passed++
   }
 
-  function test_history_copy_and_destructive_confirmations_are_explicit() {
+  function test_history_highlight_copies_exact_selection() {
+    historySelectionCopies = 0
+    historySelectionText = ""
+    historyView.copyTextSelection("selected\ntext")
+    compare(historySelectionCopies, 1)
+    compare(historySelectionText, "selected\ntext")
+    historyView.copyTextSelection("")
+    compare(historySelectionCopies, 1)
+    passed++
+  }
+
+  function test_history_long_text_is_mouse_scrollable() {
+    historyFixture.entries = [
+      {id: "long", created_at: "2026-09-08T11:00:00Z", model_id: "model",
+        language: "en", preview: "Long transcript", text: "line\n".repeat(200)}
+    ]
+    historyView.visible = true
+    historyView.selectedId = "long"
+    wait(0)
+    var scroll = findChild(historyView, "transcriptHistoryTextScroll")
+    var scrollBar = findChild(historyView, "transcriptHistoryScrollBar")
+    verify(scroll !== null)
+    verify(scrollBar !== null)
+    verify(scroll.contentHeight > scroll.height)
+    verify(scroll.interactive)
+    verify(scrollBar.size < 1)
+    scroll.contentY = scroll.contentHeight - scroll.height
+    verify(scroll.contentY > 0)
+    historyView.visible = false
+    passed++
+  }
+
+  function test_history_copy_feedback_marks_the_copied_row() {
+    historyPanelCloses = 0
+    historyFixture.entries = [
+      {id: "old", created_at: "2026-09-08T11:00:00Z", model_id: "model",
+        language: "en", preview: "Example transcript", text: "Example transcript"}
+    ]
+    historyFixture.notice = ""
+    historyView.confirming = ""
+    historyView.selectedId = "old"
+    historyView.visible = true
+    historyView.copyingId = "old"
+    historyView.copiedId = ""
+    // The real service sets the notice before emitting its success signal.
+    historyFixture.notice = "Transcript copied to clipboard"
+    historyFixture.copied("old")
+    compare(historyView.copyingId, "")
+    compare(historyView.copiedId, "old")
+    var historyContent = findChild(historyView, "transcriptHistoryContent")
+    verify(historyContent !== null)
+    historyContent.forceLayout()
+    var historyHeight = historyView.height
+    tryCompare(historyView, "confirming", "close", 1000)
+    compare(historyView.confirmChoice, 0)
+    compare(historyView.height, historyHeight)
+    var confirmOverlay = findChild(historyView, "transcriptHistoryConfirmOverlay")
+    verify(historyContent !== null)
+    verify(confirmOverlay !== null)
+    verify(!historyContent.enabled)
+    compare(confirmOverlay.z, 10)
+    compare(confirmOverlay.width, historyView.width)
+    compare(confirmOverlay.height, historyView.height)
+    keyClick(Qt.Key_L)
+    compare(historyView.confirmChoice, 1)
+    keyClick(Qt.Key_H)
+    compare(historyView.confirmChoice, 0)
+    keyClick(Qt.Key_L)
+    keyClick(Qt.Key_Escape)
+    compare(historyView.confirming, "")
+    compare(historyPanelCloses, 0)
+    historyFixture.copied("old")
+    tryCompare(historyView, "confirming", "close", 1000)
+    keyClick(Qt.Key_Return)
+    compare(historyPanelCloses, 1)
+    historyView.visible = false
+    passed++
+  }
+
+  function test_history_copy_and_delete_shortcuts_are_explicit() {
     historyCopies = 0
     historyDeletes = 0
     historyClears = 0
     historyView.visible = true
+    historyView.activate()
+    wait(0)
     historyView.selectedId = "old"
-    historyView.copySelected()
+    keyClick(Qt.Key_C, Qt.ControlModifier)
+    compare(historyCopies, 0)
+    keyClick(Qt.Key_Return)
     compare(historyCopies, 1)
     compare(historyQuery, "old")
-    historyView.requestConfirmation("delete")
+    keyClick(Qt.Key_D, Qt.ControlModifier)
+    compare(historyView.confirming, "delete")
     historyView.confirmChoice = 1
     historyView.confirm()
     compare(historyDeletes, 0)
-    historyView.requestConfirmation("delete")
+    keyClick(Qt.Key_D, Qt.ControlModifier)
     historyView.confirmChoice = 0
     historyView.confirm()
     compare(historyDeletes, 1)
-    historyView.requestConfirmation("clear")
+    wait(0)
+    keyClick(Qt.Key_D, Qt.ControlModifier | Qt.ShiftModifier)
+    compare(historyView.confirming, "clear")
     historyView.confirmChoice = 0
     historyView.confirm()
     compare(historyClears, 1)
+    var footer = findChild(historyView, "transcriptHistoryFooter")
+    verify(footer !== null)
+    compare(footer.width, historyView.width)
+    for (const line of footer.children)
+      verify(line.implicitWidth <= footer.width)
     historyView.visible = false
     passed++
   }
 
   function cleanup() {
+    historyView.visible = false
+    historyView.confirming = ""
+    historyFixture.notice = ""
     primaryActionsFixture.visible = false
     primaryActionsFixture.parent = test
     copyLast.enabled = true
@@ -395,7 +500,7 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 25) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 29) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 
@@ -497,6 +602,25 @@ TestCase {
     }
     var glyph = reloadIcon.children[0]
     compare(glyph.renderType, Text.CurveRendering)
+    passed++
+  }
+
+  function test_record_failure_pulses_yellow_and_expires() {
+    colors.load('yellow = "#e5c07b"')
+    service.reloadState = ""
+    service.readyTimer.stop()
+    service.recordingFailureTimer.interval = 100
+    service.showRecordingFailure("Selected microphone jack is disconnected")
+    verify(service.recordingFailure)
+    compare(service.stateLabel, "Recording failed")
+    compare(String(reloadIcon.color), "#e5c07b")
+    verify(reloadIcon.pulsing)
+    wait(30)
+    verify(reloadIcon.scale > 1)
+    tryCompare(service, "recordingFailure", false, 500)
+    compare(reloadIcon.pulsing, false)
+    compare(String(reloadIcon.color), "#eeeeee")
+    service.clearWarning()
     passed++
   }
 

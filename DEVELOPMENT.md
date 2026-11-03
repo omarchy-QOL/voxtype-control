@@ -32,6 +32,10 @@ The glyph keeps the host's optical centering and uses curve rendering to avoid
 native-bitmap artifacts at fractional scales. One eased progress value drives
 an 8% scale pulse and opacity over 500 ms, with no opacity jump between cycles.
 Failures reset it without a success flash. Feedback never gates model usability.
+Recording failures arrive through best-effort shell IPC, show the same warning
+palette, and pulse for five seconds independently of model reload feedback.
+Failure IPC also accepts the previous plugin ID so existing helpers continue
+reporting after the identity change.
 
 ## Structure
 
@@ -70,6 +74,11 @@ directory, atomic rename, file and directory fsync, and a serialization lock.
 The QML service requests JSON asynchronously with argument arrays. It has no
 model-state dependency. Selection is retained by stable ID across refreshes,
 so a new background entry cannot change the text being reviewed or copied.
+Successful full-entry copies flash the stable row ID, produce both in-panel
+and Omarchy desktop confirmations, then offer a default-yes panel close prompt;
+failures produce no success signal or close prompt. Mouse selections travel
+over helper standard input and receive only a short in-panel confirmation to
+avoid notification noise.
 
 Capture failures notify but do not block insertion. Unit tests use synthetic
 text and fake clipboards. Output policy is separately persisted by the helper;

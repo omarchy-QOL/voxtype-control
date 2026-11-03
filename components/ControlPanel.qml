@@ -171,6 +171,7 @@ KeyboardPanel {
                 warningColor: root.warning
                 fontFamily: root.fontFamily
                 onBackRequested: root.returnFromHistory()
+                onPanelCloseRequested: root.closeRequested()
             }
         }
     }

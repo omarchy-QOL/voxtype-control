@@ -24,9 +24,9 @@ omarchy plugin add https://github.com/omarchy-QOL/voxtype-control --enable
 
 This plugin does not automatically replace the stock dictation indicator.
 To show only the plugin microphone, remove `Dictation` from the
-`omarchy.indicators` entry's `items` array in `~/.config/omarchy/shell.json`,
-keeping the other indicators. Disabling or removing the plugin does not restore
-that entry automatically; add it back to regain the stock indicator.
+`omarchy.indicators` entry's `items` array in `~/.config/omarchy/shell.json`.
+Disabling or removing the plugin does not restore that entry automatically
+(you have to add it back manually).
 
 ## Use
 
@@ -38,7 +38,13 @@ that entry automatically; add it back to regain the stock indicator.
 - Wait for **Ready** before dictating. Finish dictation before switching.
 - Select the red eject icon to unload the current model. Its files stay on disk.
 - Select **Transcripts** to search, review, copy, or explicitly delete completed
-  dictations. The newest entry is selected; opening and browsing never copy.
+  dictations. Click an entry or press Enter to copy it; arrow-key browsing does
+  not copy. Use the mouse wheel or scrollbar to read long transcripts.
+  Highlighting text with the mouse copies that selection on release and shows a
+  short in-panel confirmation. Full-entry copies flash the row yellow, send a
+  five-second desktop notification, then ask whether to close the plugin. **Yes**
+  is selected by default so Enter closes it and restores the previous focus;
+  use `h`/`l` to choose, or press Esc for **No**.
 - **Right-click**, or use the `[v]oxtype tui` footer shortcut, to open
   Voxtype's terminal menu for model downloads and configuration.
 
@@ -58,6 +64,10 @@ You can close the menu while a model or language change is applying. The
 microphone keeps pulsing yellow, then flashes green for one second when Ready.
 The hover tooltip also shows **Switching** in theme yellow and **Ready** in green.
 You can dictate immediately; the flash does not add a delay.
+
+Recording failures show a critical desktop notification. The microphone icon
+also pulses yellow for five seconds so failures from a desktop shortcut remain
+visible without a terminal.
 
 ## Demo
 
@@ -82,8 +92,10 @@ Inside the panel:
 | `q` / `Esc`         | Close the panel or dialog |
 
 While typing in a search field, letters remain ordinary text. In transcript
-history, Enter copies the selected entry and Tab moves to
-Copy/Delete/Clear/Back. Delete and Clear require confirmation.
+history, arrow keys move, Enter copies, `Ctrl+D` deletes the selected entry,
+and `Ctrl+Shift+D` deletes all transcript history. Both deletions require
+confirmation. After a successful full-entry copy, `h`/`l` chooses whether to
+close the plugin, Enter accepts the default **Yes**, and Esc means **No**.
 
 The Workflow setup also provides `Ctrl+Insert` for dictation and
 `Ctrl+Shift+Insert` for this panel. Desktop shortcuts are configured separately,
@@ -117,7 +129,8 @@ continue, shows a critical notification, and remains visible in the history view
 
 History remains available while models are unloaded or ASR is unavailable.
 Removing the plugin or Workflow helper retains the transcript files. Use the
-confirmed Delete/Clear actions when removal is intended.
+confirmed `Ctrl+D` or `Ctrl+Shift+D` actions when removal is intended. The
+explicit `history clear` CLI command remains available.
 
 ## Remove
 

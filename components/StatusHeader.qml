@@ -11,8 +11,8 @@ Item {
     property color ready: Color.accent
     property color urgent: Color.urgent
     required property color warning
-    readonly property color stateColor: service && service.stateLabel === "Ready" ? ready : foreground
-    readonly property color statusColor: service && service.dictationState === "recording" ? urgent : service && service.reloading ? warning : service && service.readyFlash ? ready : service && service.dictationState === "transcribing" ? warning : foreground
+    readonly property color stateColor: service && service.recordingFailure ? warning : service && service.stateLabel === "Ready" ? ready : foreground
+    readonly property color statusColor: service && service.recordingFailure ? warning : service && service.dictationState === "recording" ? urgent : service && service.reloading ? warning : service && service.readyFlash ? ready : service && service.dictationState === "transcribing" ? warning : foreground
     property string statusIcon: "󰍬"
     property string fontFamily: Style.font.family
     implicitHeight: Math.max(titleBlock.implicitHeight, modelBox.implicitHeight)

@@ -37,14 +37,49 @@ assert.equal(root.warning, "save failed\nbad entry");
 assert.equal(root.error, "");
 assert.throws(() => service.updateList('{"schema":2,"entries":[]}'), /current Voxtype/);
 
+const selectionProcess = {};
+const selectionRoot = { busy: false, error: "stale", notice: "stale",
+  controlPath: "/test/voxtype-control" };
+const selectionService = vm.createContext({ root: selectionRoot, selectionProcess });
+vm.runInContext(qmlFunction(serviceSource, "copySelection"), selectionService);
+selectionService.copySelection("selected text");
+assert.equal(selectionRoot.error, "");
+assert.equal(selectionRoot.notice, "");
+assert.equal(selectionProcess.pendingText, "selected text");
+assert.deepEqual(Array.from(selectionProcess.command),
+  ["/test/voxtype-control", "history", "copy-selection"]);
+assert.equal(selectionProcess.stdinEnabled, true);
+assert.equal(selectionProcess.running, true);
+
 const view = fs.readFileSync(
   new URL("../history/TranscriptHistory.qml", import.meta.url), "utf8");
 const activate = qmlFunction(view, "activate");
 assert.ok(activate.includes("service.refresh"));
 assert.ok(!activate.includes("copy"));
 assert.ok(view.includes("selectedId"));
+assert.ok(view.includes("onClicked: root.copyTranscript(transcriptRow.modelData.id)"));
+assert.ok(view.includes("Copied to clipboard"));
+assert.ok(view.includes('root.requestConfirmation("close")'));
+assert.ok(view.includes('action === "close" ? 0 : 1'));
+assert.ok(view.includes("root.panelCloseRequested()"));
+assert.ok(view.includes('root.confirmingClose ? "Yes" : "Delete"'));
+assert.ok(view.includes('root.confirmingClose ? "No" : "Cancel"'));
+assert.ok(view.includes('objectName: "transcriptHistoryConfirmOverlay"'));
+assert.ok(view.includes("implicitHeight: mainContent.implicitHeight"));
+assert.ok(view.includes("anchors.fill: parent"));
+assert.ok(view.includes("z: 10"));
 assert.ok(view.includes("requestConfirmation(\"delete\")"));
 assert.ok(view.includes("requestConfirmation(\"clear\")"));
+assert.ok(!view.includes("Qt.Key_C"));
+assert.ok(view.includes("Qt.Key_D"));
+assert.ok(view.includes("Qt.ControlModifier") && view.includes("Qt.ShiftModifier"));
+assert.ok(view.includes("String.fromCharCode(0x2190)"));
+assert.ok(view.includes("String.fromCharCode(0x2192)"));
+assert.ok(view.includes("import QtQuick.Controls"));
+assert.ok(view.includes("ScrollBar.vertical: ScrollBar"));
+assert.ok(view.includes("flickableDirection: Flickable.VerticalFlick"));
+assert.ok(view.includes("PointHandler"));
+assert.ok(view.includes("onActiveChanged"));
 assert.ok(serviceSource.includes('[root.controlPath, "history", action]'));
 assert.ok(serviceSource.includes('"Transcript copied to clipboard"'));
 const actionProcess = {};
@@ -57,5 +92,6 @@ assert.deepEqual(Array.from(actionProcess.command),
 assert.equal(actionProcess.running, true);
 assert.equal(actionRoot.error, "");
 assert.equal(actionRoot.notice, "");
+assert.ok(serviceSource.includes("Selection of transcript text copied"));
 assert.ok(!serviceSource.includes("sh -c"));
 console.log("ok - transcript identity, service parsing, and explicit copy/delete contracts");
