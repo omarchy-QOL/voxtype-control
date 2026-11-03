@@ -89,7 +89,7 @@ QtObject {
         return
       }
       if (action === "copy") {
-        root.notice = "Transcript copied"
+        root.notice = "Transcript copied to clipboard"
         root.noticeTimer.restart()
         root.copied(transcriptId)
       } else {

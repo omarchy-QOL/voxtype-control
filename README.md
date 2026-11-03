@@ -31,13 +31,22 @@ that entry automatically; add it back to regain the stock indicator.
 ## Use
 
 - **Left-click** the microphone to open model and language controls.
-- Choose an installed model and language, then select **Load / Apply**.
+- Choose an installed model and language, then select **Apply model/language**.
+- Click **[C]opy last transcript**, or press `c`, to copy the newest completed
+  transcript directly to the clipboard, without opening history. This uses the
+  same copy action as Enter in history, independent of its search filter.
 - Wait for **Ready** before dictating. Finish dictation before switching.
 - Select the red eject icon to unload the current model. Its files stay on disk.
 - Select **Transcripts** to search, review, copy, or explicitly delete completed
   dictations. The newest entry is selected; opening and browsing never copy.
-- **Right-click**, or select **TUI**, to open Voxtype's terminal menu
-  for model downloads and configuration.
+- **Right-click**, or use the `[v]oxtype tui` footer shortcut, to open
+  Voxtype's terminal menu for model downloads and configuration.
+
+The footer contains `[v]oxtype tui`, `[s]ettings`,
+`[r]eplacements` and `[t]ranscripts`. Bracketed keys use the system theme's
+yellow. Click a label or press its key; Tab and arrow navigation also work.
+A divider separates the footer. The panel fits the footer and the two equally
+high primary buttons without clipping their labels.
 
 Parakeet v3 recognizes languages automatically. Canary requires **English** or
 **German**; select one before loading. Available choices depend on the model.
@@ -47,6 +56,7 @@ The GPU row identifies hardware, not a guarantee of GPU acceleration.
 
 You can close the menu while a model or language change is applying. The
 microphone keeps pulsing yellow, then flashes green for one second when Ready.
+The hover tooltip also shows **Switching** in theme yellow and **Ready** in green.
 You can dictate immediately; the flash does not add a delay.
 
 ## Demo
@@ -64,6 +74,7 @@ Inside the panel:
 | Arrows or `h/j/k/l` | Move between controls     |
 | `Tab` / `Shift+Tab` | Next / previous control   |
 | `Enter`             | Activate or open search   |
+| `c`                 | Copy last transcript      |
 | `v`                 | Open TUI                  |
 | `s`                 | Open settings             |
 | `r`                 | Edit replacements         |
@@ -111,7 +122,7 @@ confirmed Delete/Clear actions when removal is intended.
 ## Remove
 
 ```bash
-omarchy plugin remove io.github.ilyazar.voxtype-control
+omarchy plugin remove omarchy-qol.voxtype-control
 ```
 
 This removes the panel, not Voxtype, the helper, transcripts, models, or

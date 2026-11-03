@@ -9,7 +9,7 @@ import "components" as Components
 Panel {
     id: root
 
-    moduleName: "io.github.ilyazar.voxtype-control"
+    moduleName: "omarchy-qol.voxtype-control"
     ipcTarget: root.QsWindow.window && root.QsWindow.window.screen ? moduleName + ".editor." + root.QsWindow.window.screen.name : ""
 
     property bool editingReplacements: false
@@ -22,7 +22,7 @@ Panel {
     readonly property color warning: stateColors.warning
     readonly property color statusColor: voxtype && voxtype.dictationState === "recording" ? urgent : voxtype && voxtype.reloading ? warning : voxtype && voxtype.readyFlash ? ready : voxtype && voxtype.dictationState === "transcribing" ? warning : voxtype && voxtype.available ? foreground : dim
     readonly property string statusIcon: voxtype && !voxtype.reloading && voxtype.dictationState === "transcribing" ? "󰔟" : "󰍬"
-    readonly property color stateColor: voxtype && voxtype.stateLabel === "Ready" ? ready : foreground
+    readonly property color stateColor: voxtype && (voxtype.reloading || voxtype.stateLabel === "Switching") ? warning : voxtype && voxtype.stateLabel === "Ready" ? ready : foreground
 
     function launchConfiguration() {
         close();

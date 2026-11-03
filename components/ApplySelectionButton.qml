@@ -9,8 +9,10 @@ Button {
   property color busyColor: Color.accent
   property bool spinning: false
   Accessible.name: label
+  implicitWidth: check.implicitWidth + caption.implicitWidth + contents.spacing
+    + leftPadding + rightPadding + _reservedBorderLeft + _reservedBorderRight
   implicitHeight: Math.max(Style.spacing.controlHeight, contents.implicitHeight
-    + verticalPadding * 2 + Border.top(borderSpec) + Border.bottom(borderSpec))
+    + verticalPadding * 2 + _reservedBorderTop + _reservedBorderBottom)
 
   Row {
     id: contents
@@ -35,6 +37,7 @@ Button {
       }
     }
     Text {
+      id: caption
       width: parent.width - check.width - parent.spacing
       anchors.verticalCenter: parent.verticalCenter
       text: root.label

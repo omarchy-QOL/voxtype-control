@@ -41,6 +41,22 @@ Root `BarWidget.qml` and `Service.qml` remain Omarchy host entry points.
 helpers. The service has one host-managed lifetime; panels remain per screen.
 No second Quickshell process or plugin-local mutable state is created.
 
+`FooterShortcut.qml` renders unboxed clickable shortcut labels. Bracketed
+keys use the shared warning/yellow theme color, and cursor/hover underlines
+preserve navigation feedback without restoring the removed button row.
+The widest of the footer and primary actions, plus panel insets, sizes the
+main controls; history and unload views keep their separate width policies.
+Footer actions retain their availability guards and key bindings.
+
+The primary row contains equally high apply and copy buttons with widths
+proportional to their natural labels. `CopyLastTranscriptButton.qml` colors
+`[C]` yellow and provides a balanced two-line tooltip. It calls the existing
+history service with `copy("latest")`, letting the helper resolve the newest
+stored entry regardless of stale or filtered UI data. Copy availability and
+feedback are independent of model loading; failures use the history error
+rather than reporting success. The bar hover state uses theme yellow while
+switching, including the interval before readiness is freshly confirmed.
+
 ## Transcript history
 
 The controller injects a non-streaming passthrough post-processor into its
@@ -77,7 +93,7 @@ external workers remain resident where supported.
 The installed plugin must be a regular checkout or worktree, not a symlink:
 
 ```text
-~/.config/omarchy/plugins/io.github.ilyazar.voxtype-control
+~/.config/omarchy/plugins/omarchy-qol.voxtype-control
 ```
 
 Use `git worktree list` to identify a development checkout. Do not run the

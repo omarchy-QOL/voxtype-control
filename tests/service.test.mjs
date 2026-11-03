@@ -153,7 +153,27 @@ for (const loaded of [false, true, false, true]) {
 assert.ok(!controls.includes("recover"));
 assert.ok(!controls.includes("Language is controlled by this model."));
 assert.ok(!controls.includes("Choose the language you are speaking."));
-assert.ok(controls.includes('"Load STT model / Apply language selection"'));
+assert.ok(controls.includes('"Apply model/language"'));
+const copiedIds = [];
+const latest = vm.createContext({ root: { historyService: {
+  busy: false, query: "old search", entries: [{ id: "stale" }],
+  copy(id) { copiedIds.push(id); },
+} } });
+vm.runInContext(qmlFunction(controls, "copyLastTranscript"), latest);
+latest.copyLastTranscript();
+assert.deepEqual(copiedIds, ["latest"]);
+assert.equal(latest.root.showLastCopyNotice, true);
+latest.root.historyService.busy = true;
+latest.copyLastTranscript();
+assert.equal(copiedIds.length, 1);
+latest.root.historyService = null;
+latest.copyLastTranscript();
+assert.equal(copiedIds.length, 1);
+assert.ok(controls.includes('[applyButton, copyLastButton]'));
+assert.ok(controls.includes('height: Math.max(applyButton.implicitHeight, copyLastButton.implicitHeight)'));
+assert.ok(controls.includes('primaryActions.naturalWidth + root.horizontalInset'));
+assert.ok(controls.includes('enabled: root.historyService && !root.historyService.busy'));
+console.log("ok - latest transcript copy uses the shared history path, independent of model state and search");
 assert.ok(controls.includes("checkColor: root.ready"));
 assert.ok(!widget.includes("slotSize: Style.bar.statusSlot"));
 const launch = vm.createContext({
@@ -165,7 +185,7 @@ launch.launchConfiguration();
 assert.equal(launch.launched.join(" "), "omarchy-launch-terminal -e /test/voxtype-control configure");
 assert.ok(controls.includes('id: unloadButton'));
 assert.ok(controls.includes('tooltipText: "Unload current model; keep its files"'));
-assert.ok(controls.includes('text: "TUI"'));
+assert.ok(controls.includes('suffix: "oxtype tui"'));
 console.log("ok - language policies, draft validation, state and process requests");
 
 const models = [
@@ -208,14 +228,16 @@ console.log("ok - fuzzy search, installed-only selector, and cancel without inst
 assert.ok(controls.includes("controlRows: [[backendDropdown, unloadButton]"));
 assert.ok(controls.includes("readonly property var actions: [].concat.apply([], controlRows)"));
 assert.ok(!controls.includes('text: "h/j/k/l: move"'));
-assert.ok(controls.includes('text: "Settings"'));
-assert.ok(controls.includes('text: "Replacements"'));
-assert.ok(controls.includes('text: "Transcripts"'));
-assert.ok(controls.includes('text: "[v]oxtype tui  [s]ettings  [r]eplacements  [t]ranscripts"'));
-assert.ok(controls.includes("[configureButton, configFileButton, replacementsButton, historyButton]"));
-assert.ok(controls.includes("actionRow.implicitWidth + root.padding * 2"));
-assert.ok(controls.includes("id: actionRow"));
-assert.ok(!controls.includes("width: configureButton.width"));
+assert.equal((controls.match(/FooterShortcut \{/g) || []).length, 4);
+for (const label of ['suffix: "oxtype tui"', 'suffix: "ettings"',
+  'suffix: "eplacements"', 'suffix: "ranscripts"']) assert.ok(controls.includes(label));
+assert.ok(controls.includes("[configureShortcut, settingsShortcut, replacementsShortcut, historyShortcut]"));
+assert.ok(controls.includes("shortcutFooter.implicitWidth + root.horizontalInset"));
+assert.ok(controls.includes('objectName: "voxtypeFooterSeparator"'));
+assert.ok(controls.indexOf('objectName: "voxtypeFooterSeparator"') < controls.indexOf("id: shortcutFooter"));
+assert.ok(!controls.includes("id: actionRow"));
+assert.ok(!controls.includes("configureButton"));
+assert.equal((controls.match(/shortcutColor: root.warning/g) || []).length, 5);
 launch.editorLauncher = {};
 launch.editingReplacements = false;
 launch.ipcTarget = "voxtype.editor.DP-3";
@@ -237,23 +259,24 @@ assert.ok(controls.includes("open: root.panelOwner.opened && !root.editingReplac
 let closes = 0;
 const shortcuts = vm.createContext({ root: {
     closeRequested() { closes++; }, actionIndex: 0,
-    actions: ["model", "unload", "language", "apply", "tui", "settings", "replacements", "history"],
-    controlRows: [["model", "unload"], ["language"], ["apply"],
+    actions: ["model", "unload", "language", "apply", "copy", "tui", "settings", "replacements", "history"],
+    controlRows: [["model", "unload"], ["language"], ["apply", "copy"],
       ["tui", "settings", "replacements", "history"]], focusControls() {},
-  }, configureButton: button, configFileButton: button,
-  replacementsButton: button, historyButton: button,
+  }, copyLastButton: button, configureShortcut: button, settingsShortcut: button,
+  replacementsShortcut: button, historyShortcut: button,
   backendDropdown: { close() {} }, languageDropdown: { close() {} } });
 vm.runInContext(qmlFunction(controls, "activateShortcut"), shortcuts);
 const previousClicks = clicks;
-for (const key of ["v", "S", "R", "t", "x", "+"]) shortcuts.activateShortcut(key);
-assert.equal(clicks - previousClicks, 4);
+for (const key of ["c", "C", "v", "S", "R", "t", "x", "+"]) shortcuts.activateShortcut(key);
+assert.equal(clicks - previousClicks, 6);
 shortcuts.activateShortcut("q");
 shortcuts.activateShortcut("Q");
 assert.equal(closes, 2);
 assert.ok(controls.includes('blocked: root.unloadingModel || backendDropdown.popupOpen || languageDropdown.popupOpen'));
 button.enabled = false;
 shortcuts.activateShortcut("r");
-assert.equal(clicks - previousClicks, 4);
+shortcuts.activateShortcut("C");
+assert.equal(clicks - previousClicks, 6);
 vm.runInContext(qmlFunction(controls, "moveControl"), shortcuts);
 shortcuts.moveControl(1);
 assert.equal(shortcuts.root.actionIndex, 1);
@@ -275,20 +298,24 @@ shortcuts.moveCursor(1, 0);
 assert.equal(shortcuts.root.actionIndex, 2);
 shortcuts.moveCursor(0, 1);
 assert.equal(shortcuts.root.actionIndex, 3);
-shortcuts.moveCursor(0, 1);
-assert.equal(shortcuts.root.actionIndex, 4);
 shortcuts.moveCursor(1, 0);
+assert.equal(shortcuts.root.actionIndex, 4);
+shortcuts.moveCursor(-1, 0);
+assert.equal(shortcuts.root.actionIndex, 3);
+shortcuts.moveCursor(0, 1);
 assert.equal(shortcuts.root.actionIndex, 5);
 shortcuts.moveCursor(1, 0);
 assert.equal(shortcuts.root.actionIndex, 6);
 shortcuts.moveCursor(1, 0);
 assert.equal(shortcuts.root.actionIndex, 7);
 shortcuts.moveCursor(1, 0);
-assert.equal(shortcuts.root.actionIndex, 4);
+assert.equal(shortcuts.root.actionIndex, 8);
+shortcuts.moveCursor(1, 0);
+assert.equal(shortcuts.root.actionIndex, 5);
 shortcuts.moveCursor(-1, 0);
-assert.equal(shortcuts.root.actionIndex, 7);
+assert.equal(shortcuts.root.actionIndex, 8);
 shortcuts.moveCursor(0, -1);
-assert.equal(shortcuts.root.actionIndex, 3);
+assert.equal(shortcuts.root.actionIndex, 4);
 assert.ok(controls.indexOf("NoticeSection {") < controls.indexOf('label: "Speech model"'));
 console.log("ok - row/column movement, all-control Tab cycle, and unload-only picker");
 
@@ -312,9 +339,14 @@ iconState.voxtype.dictationState = "idle";
 iconState.voxtype.readyFlash = false;
 assert.equal(vm.runInContext(iconColor, iconState), "white");
 const status = vm.createContext({ voxtype: { stateLabel: "Ready" }, ready: "green",
-  foreground: "white" });
+  foreground: "white", warning: "yellow" });
 assert.equal(vm.runInContext(stateColor, status), "green");
-for (const label of ["Switching", "Installing", "Transcribing", "Unavailable", "Unloaded"]) {
+status.voxtype.reloading = true;
+assert.equal(vm.runInContext(stateColor, status), "yellow");
+status.voxtype.reloading = false;
+status.voxtype.stateLabel = "Switching";
+assert.equal(vm.runInContext(stateColor, status), "yellow");
+for (const label of ["Installing", "Transcribing", "Unavailable", "Unloaded"]) {
   status.voxtype.stateLabel = label;
   assert.equal(vm.runInContext(stateColor, status), "white");
 }
@@ -328,6 +360,8 @@ assert.ok(controls.includes("ready: root.ready"));
 assert.ok(controls.includes("urgent: root.urgent"));
 assert.ok(controls.includes("warning: root.warning"));
 assert.ok(!widget.match(/#[0-9a-fA-F]{6}/));
+const manifest = JSON.parse(fs.readFileSync(new URL('../manifest.json', import.meta.url), 'utf8'));
+assert.ok(widget.includes(`moduleName: "${manifest.id}"`));
 console.log("ok - shared panel/tooltip state colour and no hardcoded palette");
 
 let focused = 0;

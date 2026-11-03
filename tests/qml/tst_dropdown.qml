@@ -23,6 +23,9 @@ TestCase {
   property int historyDeletes: 0
   property int historyClears: 0
   property string historyQuery: ""
+  property int footerClicks: 0
+  property int copyLastClicks: 0
+  property color footerYellow: "#e0af68"
   property alias fixtureService: service
   property var controlRows: [[dropdown, notice], [tooltip]]
   readonly property var actions: [].concat.apply([], controlRows)
@@ -31,7 +34,7 @@ TestCase {
     id: applyButton
     visible: false
     width: 400
-    label: "Load STT model / Apply language selection"
+    label: "Apply model/language"
     foreground: "#eeeeee"
     checkColor: "#00ff00"
     busyColor: colors.warning
@@ -118,6 +121,100 @@ TestCase {
     Button { id: transcriptsAction; text: "Transcripts"; iconText: "󰈙"; bordered: true }
   }
 
+  Row {
+    id: shortcutFooterFixture
+    visible: false
+    y: 120
+    z: 100
+    spacing: Style.space(12)
+    Components.FooterShortcut {
+      id: footerTui
+      shortcut: "v"; suffix: "oxtype tui"
+      foreground: "#888888"; shortcutColor: test.footerYellow
+      onClicked: test.footerClicks++
+    }
+    Components.FooterShortcut {
+      id: footerSettings
+      shortcut: "s"; suffix: "ettings"
+      foreground: "#888888"; shortcutColor: test.footerYellow
+    }
+    Components.FooterShortcut {
+      id: footerReplacements
+      shortcut: "r"; suffix: "eplacements"
+      foreground: "#888888"; shortcutColor: test.footerYellow
+    }
+    Components.FooterShortcut {
+      id: footerTranscripts
+      shortcut: "t"; suffix: "ranscripts"
+      foreground: "#888888"; shortcutColor: test.footerYellow
+    }
+  }
+
+  Row {
+    id: primaryActionsFixture
+    visible: false
+    y: 70
+    z: 101
+    readonly property real naturalWidth: compactApply.implicitWidth + copyLast.implicitWidth + spacing
+    width: Math.max(Style.space(360), shortcutFooterFixture.implicitWidth, naturalWidth)
+    height: Math.max(compactApply.implicitHeight, copyLast.implicitHeight)
+    spacing: Style.space(6)
+    Components.ApplySelectionButton {
+      id: compactApply
+      width: (parent.width - parent.spacing) * implicitWidth / (compactApply.implicitWidth + copyLast.implicitWidth)
+      height: parent.height
+      label: "Apply model/language"
+      bordered: true
+    }
+    Components.CopyLastTranscriptButton {
+      id: copyLast
+      width: parent.width - compactApply.width - parent.spacing
+      height: parent.height
+      bordered: true
+      shortcutColor: test.footerYellow
+      onClicked: test.copyLastClicks++
+    }
+  }
+
+  function test_primary_actions_fit_without_clipping_and_have_equal_heights() {
+    wait(0)
+    compare(compactApply.height, copyLast.height)
+    verify(compactApply.width >= compactApply.implicitWidth)
+    verify(copyLast.width >= copyLast.implicitWidth)
+    verify(primaryActionsFixture.naturalWidth < actionRowFixture.implicitWidth)
+    compare(copyLast.tooltipText, "Copy last transcript\nrecorded to clipboard")
+    var lines = copyLast.tooltipText.split("\n")
+    compare(lines.length, 2)
+    verify(Math.abs(lines[0].length - lines[1].length) <= 2)
+    passed++
+  }
+
+  function test_zz_copy_last_button_tracks_yellow_and_is_clickable() {
+    copyLastClicks = 0
+    primaryActionsFixture.parent = test.parent
+    primaryActionsFixture.visible = true
+    footerYellow = "#ffd166"
+    wait(0)
+    var key = findChild(copyLast, "copyLastTranscriptKey")
+    verify(key !== null)
+    compare(key.text, "[C]")
+    compare(String(key.color), String(footerYellow))
+    var tip = null
+    for (const child of copyLast.data) {
+      if (child.text === copyLast.tooltipText) tip = child
+    }
+    verify(tip !== null)
+    mouseMove(copyLast, copyLast.width / 2, copyLast.height / 2)
+    tryCompare(tip, "visible", true, 1000)
+    compare(tip.contentItem.lineCount, 2)
+    mouseClick(copyLast, copyLast.width / 2, copyLast.height / 2)
+    compare(copyLastClicks, 1)
+    copyLast.enabled = false
+    mouseClick(copyLast, copyLast.width / 2, copyLast.height / 2)
+    compare(copyLastClicks, 1)
+    passed++
+  }
+
   Components.NoticeSection {
     id: notice
     width: 320
@@ -137,16 +234,41 @@ TestCase {
   }
 
 
-  function test_action_icons_and_labels_fit_one_row() {
-    var panelWidth = Style.space(440)
-    var buttons = [tuiAction, settingsAction, replacementsAction, transcriptsAction]
-    verify(actionRowFixture.implicitWidth <= panelWidth)
-    for (const button of buttons) {
-      verify(button.iconText !== "")
-      compare(button.width, button.implicitWidth)
+  function test_footer_is_narrower_than_the_removed_button_row() {
+    wait(0)
+    verify(shortcutFooterFixture.implicitWidth > 0)
+    verify(shortcutFooterFixture.implicitWidth < actionRowFixture.implicitWidth)
+    for (const link of [footerTui, footerSettings, footerReplacements, footerTranscripts]) {
+      compare(link.width, link.implicitWidth)
+      verify(link.implicitHeight > 0)
     }
-    verify(tuiAction.width < settingsAction.width)
-    verify(settingsAction.width < replacementsAction.width)
+    passed++
+  }
+
+  // Pointer tests run last to leave the hidden keyboard fixtures undisturbed.
+  function test_z_footer_keys_follow_theme_colour_and_links_remain_clickable() {
+    footerClicks = 0
+    // TestCase is hidden; pointer tests need the visible scene.
+    shortcutFooterFixture.parent = test.parent
+    shortcutFooterFixture.visible = true
+    wait(0)
+    var links = [footerTui, footerSettings, footerReplacements, footerTranscripts]
+    footerYellow = "#fabd2f"
+    wait(0)
+    for (const link of links) {
+      var key = findChild(link, "shortcutKey")
+      verify(key !== null)
+      compare(key.text, "[" + link.shortcut + "]")
+      compare(String(key.color), String(footerYellow))
+    }
+    mouseClick(footerTui, footerTui.width / 2, footerTui.height / 2)
+    compare(footerClicks, 1)
+    footerTui.enabled = false
+    mouseClick(footerTui, footerTui.width / 2, footerTui.height / 2)
+    compare(footerClicks, 1)
+    footerTui.enabled = true
+    shortcutFooterFixture.visible = false
+    shortcutFooterFixture.parent = test
     passed++
   }
 
@@ -261,8 +383,19 @@ TestCase {
     passed++
   }
 
+  function cleanup() {
+    primaryActionsFixture.visible = false
+    primaryActionsFixture.parent = test
+    copyLast.enabled = true
+    shortcutFooterFixture.visible = false
+    shortcutFooterFixture.parent = test
+    footerTui.enabled = true
+    if (qtest_results.failed)
+      console.error("VOXTYPE_CASE_FAILED: " + qtest_results.functionName + " " + qtest_results.dataTag)
+  }
+
   function cleanupTestCase() {
-    if (passed === 22) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 25) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 

@@ -23,7 +23,11 @@ KeyboardPanel {
     property int actionIndex: 0
     property bool unloadingModel: false
     property bool showingHistory: false
-    readonly property var controlRows: [[backendDropdown, unloadButton], [languageDropdown], [applyButton], [configureButton, configFileButton, replacementsButton, historyButton]]
+    property bool showLastCopyNotice: false
+    readonly property var historyService: voxtype && voxtype.history ? voxtype.history : null
+    readonly property var controlRows: [[backendDropdown, unloadButton], [languageDropdown], [applyButton, copyLastButton], [configureShortcut, settingsShortcut, replacementsShortcut, historyShortcut]]
+    readonly property real horizontalInset: root.padding * 2 + Border.left(root.borderSpec) + Border.right(root.borderSpec)
+    readonly property real preferredControlsWidth: Math.max(Style.space(360), shortcutFooter.implicitWidth + root.horizontalInset, primaryActions.naturalWidth + root.horizontalInset)
     readonly property var actions: [].concat.apply([], controlRows)
     readonly property var languageOptions: voxtype ? voxtype.languageOptionsFor(draftModelId) : []
     readonly property var selectedModel: voxtype ? voxtype.modelFor(draftModelId) : null
@@ -39,6 +43,14 @@ KeyboardPanel {
             root.voxtype.applySelection(root.draftModelId, root.draftLanguage);
     }
 
+    function copyLastTranscript() {
+        if (!root.historyService || root.historyService.busy)
+            return;
+        root.showLastCopyNotice = true;
+        // Resolve the newest stored entry, not a stale or search-filtered row.
+        root.historyService.copy("latest");
+    }
+
     function syncDrafts() {
         if (!root.voxtype || root.draftTouched)
             return;
@@ -51,6 +63,7 @@ KeyboardPanel {
     function prepareOpen() {
         root.unloadingModel = false;
         root.showingHistory = false;
+        root.showLastCopyNotice = false;
         root.actionIndex = 0;
         root.draftTouched = false;
         root.syncDrafts();
@@ -71,7 +84,7 @@ KeyboardPanel {
 
     function returnFromHistory() {
         root.showingHistory = false;
-        root.actionIndex = root.actions.indexOf(historyButton);
+        root.actionIndex = root.actions.indexOf(historyShortcut);
         Qt.callLater(root.focusControls);
     }
 
@@ -104,10 +117,11 @@ KeyboardPanel {
             return;
         }
         var action = ({
-                v: configureButton,
-                s: configFileButton,
-                r: replacementsButton,
-                t: historyButton
+                c: copyLastButton,
+                v: configureShortcut,
+                s: settingsShortcut,
+                r: replacementsShortcut,
+                t: historyShortcut
             })[text.toLowerCase()];
         if (action && action.enabled)
             action.clicked();
@@ -138,7 +152,7 @@ KeyboardPanel {
     owner: root.panelOwner
     open: root.panelOwner.opened && !root.editingReplacements
     focusTarget: keyCatcher
-    contentWidth: root.fittedContentWidth(root.unloadingModel && unloadLoader.item ? unloadLoader.item.implicitWidth + root.padding * 2 + Border.left(root.borderSpec) + Border.right(root.borderSpec) : Math.max(Style.space(440), actionRow.implicitWidth + root.padding * 2 + Border.left(root.borderSpec) + Border.right(root.borderSpec)))
+    contentWidth: root.fittedContentWidth(root.showingHistory ? Style.space(440) : root.unloadingModel && unloadLoader.item ? unloadLoader.item.implicitWidth + root.horizontalInset : root.preferredControlsWidth)
     contentHeight: root.fittedContentHeight(root.showingHistory && historyLoader.item ? historyLoader.item.implicitHeight : root.unloadingModel && unloadLoader.item ? unloadLoader.item.implicitHeight : content.implicitHeight)
 
     Loader {
@@ -312,105 +326,140 @@ KeyboardPanel {
                     Qt.callLater(root.focusControls)
             }
 
-            ApplySelectionButton {
-                id: applyButton
-                width: parent.width
-                label: root.voxtype && root.voxtype.busy ? root.voxtype.stateLabel : root.selectedModel && root.selectedModel.codes.indexOf(root.draftLanguage) === -1 ? "Choose a spoken language first" : "Load STT model / Apply language selection"
-                spinning: root.voxtype && root.voxtype.busy
-                checkColor: root.ready
-                busyColor: root.warning
-                enabled: root.canApply
-                opacity: enabled || spinning ? 1 : 0.45
-                bordered: true
-                hasCursor: root.panelOwner.opened && root.actionIndex === 3
-                onHovered: function (hovered) {
-                    if (hovered)
-                        root.actionIndex = 3;
-                }
-                foreground: root.foreground
-                fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
-                onClicked: root.applyDraft()
-            }
-
             Row {
-                id: actionRow
+                id: primaryActions
+                objectName: "voxtypePrimaryActions"
+                readonly property real naturalWidth: applyButton.implicitWidth + copyLastButton.implicitWidth + spacing
                 width: parent.width
+                height: Math.max(applyButton.implicitHeight, copyLastButton.implicitHeight)
                 spacing: Style.space(6)
 
-                Button {
-                    id: configureButton
-                    text: "TUI"
-                    iconText: "󰒓"
-                    hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(configureButton)
+                ApplySelectionButton {
+                    id: applyButton
+                    width: (parent.width - parent.spacing) * implicitWidth / (applyButton.implicitWidth + copyLastButton.implicitWidth)
+                    height: parent.height
+                    label: root.voxtype && root.voxtype.busy ? root.voxtype.stateLabel : "Apply model/language"
+                    spinning: root.voxtype && root.voxtype.busy
+                    checkColor: root.ready
+                    busyColor: root.warning
+                    enabled: root.canApply
+                    opacity: enabled || spinning ? 1 : 0.45
+                    bordered: true
+                    hasCursor: root.panelOwner.opened && root.actionIndex === 3
                     onHovered: function (hovered) {
                         if (hovered)
-                            root.actionIndex = root.actions.indexOf(configureButton);
+                            root.actionIndex = 3;
                     }
-                    enabled: root.voxtype && root.voxtype.controlAvailable && !root.voxtype.busy
-                    bordered: true
                     foreground: root.foreground
                     fontFamily: root.fontFamily
-                    onClicked: root.configureRequested()
+                    onClicked: root.applyDraft()
                 }
 
-                Button {
-                    id: configFileButton
-                    text: "Settings"
-                    iconText: "󰷈"
-                    hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(configFileButton)
-                    onHovered: function (hovered) {
-                        if (hovered)
-                            root.actionIndex = root.actions.indexOf(configFileButton);
-                    }
-                    enabled: root.voxtype !== null
-                    bordered: true
+                CopyLastTranscriptButton {
+                    id: copyLastButton
+                    width: parent.width - applyButton.width - parent.spacing
+                    height: parent.height
+                    shortcutColor: root.warning
                     foreground: root.foreground
                     fontFamily: root.fontFamily
-                    onClicked: root.configFileRequested()
-                }
-
-                Button {
-                    id: replacementsButton
-                    text: "Replacements"
-                    iconText: "󰛔"
-                    hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(replacementsButton)
+                    bordered: true
+                    enabled: root.historyService && !root.historyService.busy
+                    opacity: enabled ? 1 : 0.45
+                    hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(copyLastButton)
                     onHovered: function (hovered) {
                         if (hovered)
-                            root.actionIndex = root.actions.indexOf(replacementsButton);
+                            root.actionIndex = root.actions.indexOf(copyLastButton);
                     }
-                    enabled: root.voxtype && root.voxtype.controlAvailable && !root.voxtype.busy
-                    bordered: true
-                    foreground: root.foreground
-                    fontFamily: root.fontFamily
-                    onClicked: root.replacementsRequested()
-                }
-
-                Button {
-                    id: historyButton
-                    text: "Transcripts"
-                    iconText: "󰈙"
-                    hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(historyButton)
-                    onHovered: function (hovered) {
-                        if (hovered)
-                            root.actionIndex = root.actions.indexOf(historyButton);
-                    }
-                    enabled: root.voxtype && root.voxtype.history
-                    bordered: true
-                    foreground: root.foreground
-                    fontFamily: root.fontFamily
-                    onClicked: root.openHistory()
+                    onClicked: root.copyLastTranscript()
                 }
             }
 
             Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "[v]oxtype tui  [s]ettings  [r]eplacements  [t]ranscripts"
+                objectName: "voxtypeLastCopyNotice"
+                width: parent.width
+                visible: root.showLastCopyNotice && text !== ""
+                text: root.historyService ? root.historyService.error || root.historyService.notice : ""
                 textFormat: Text.PlainText
-                color: root.dim
-                font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                wrapMode: Text.WordWrap
+                color: root.historyService && root.historyService.error ? root.urgent : root.ready
+                font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
-                font.bold: true
-                font.letterSpacing: 0.8
+            }
+
+            PanelSeparator {
+                objectName: "voxtypeFooterSeparator"
+                foreground: root.foreground
+            }
+
+            Row {
+                id: shortcutFooter
+                objectName: "voxtypeShortcutFooter"
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: Style.space(12)
+
+                FooterShortcut {
+                    id: configureShortcut
+                    shortcut: "v"
+                    suffix: "oxtype tui"
+                    shortcutColor: root.warning
+                    foreground: root.dim
+                    fontFamily: root.fontFamily
+                    hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(configureShortcut)
+                    enabled: root.voxtype && root.voxtype.controlAvailable && !root.voxtype.busy
+                    onHovered: function (hovered) {
+                        if (hovered)
+                            root.actionIndex = root.actions.indexOf(configureShortcut);
+                    }
+                    onClicked: root.configureRequested()
+                }
+
+                FooterShortcut {
+                    id: settingsShortcut
+                    shortcut: "s"
+                    suffix: "ettings"
+                    shortcutColor: root.warning
+                    foreground: root.dim
+                    fontFamily: root.fontFamily
+                    hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(settingsShortcut)
+                    enabled: root.voxtype !== null
+                    onHovered: function (hovered) {
+                        if (hovered)
+                            root.actionIndex = root.actions.indexOf(settingsShortcut);
+                    }
+                    onClicked: root.configFileRequested()
+                }
+
+                FooterShortcut {
+                    id: replacementsShortcut
+                    shortcut: "r"
+                    suffix: "eplacements"
+                    shortcutColor: root.warning
+                    foreground: root.dim
+                    fontFamily: root.fontFamily
+                    hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(replacementsShortcut)
+                    enabled: root.voxtype && root.voxtype.controlAvailable && !root.voxtype.busy
+                    onHovered: function (hovered) {
+                        if (hovered)
+                            root.actionIndex = root.actions.indexOf(replacementsShortcut);
+                    }
+                    onClicked: root.replacementsRequested()
+                }
+
+                FooterShortcut {
+                    id: historyShortcut
+                    shortcut: "t"
+                    suffix: "ranscripts"
+                    shortcutColor: root.warning
+                    foreground: root.dim
+                    fontFamily: root.fontFamily
+                    hasCursor: root.panelOwner.opened && root.actionIndex === root.actions.indexOf(historyShortcut)
+                    enabled: root.voxtype && root.voxtype.history
+                    onHovered: function (hovered) {
+                        if (hovered)
+                            root.actionIndex = root.actions.indexOf(historyShortcut);
+                    }
+                    onClicked: root.openHistory()
+                }
             }
         }
     }

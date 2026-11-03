@@ -46,5 +46,16 @@ assert.ok(view.includes("selectedId"));
 assert.ok(view.includes("requestConfirmation(\"delete\")"));
 assert.ok(view.includes("requestConfirmation(\"clear\")"));
 assert.ok(serviceSource.includes('[root.controlPath, "history", action]'));
+assert.ok(serviceSource.includes('"Transcript copied to clipboard"'));
+const actionProcess = {};
+const actionRoot = { controlPath: "/test/voxtype-control", error: "stale", notice: "stale" };
+const actionService = vm.createContext({ root: actionRoot, actionProcess });
+vm.runInContext(qmlFunction(serviceSource, "runAction"), actionService);
+actionService.runAction("copy", "latest");
+assert.deepEqual(Array.from(actionProcess.command),
+  ["/test/voxtype-control", "history", "copy", "latest"]);
+assert.equal(actionProcess.running, true);
+assert.equal(actionRoot.error, "");
+assert.equal(actionRoot.notice, "");
 assert.ok(!serviceSource.includes("sh -c"));
 console.log("ok - transcript identity, service parsing, and explicit copy/delete contracts");
