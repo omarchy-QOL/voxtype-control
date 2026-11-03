@@ -51,8 +51,8 @@ Disabling or removing the plugin does not restore that entry automatically
   is selected by default so Enter closes it and restores the previous focus;
   use `h`/`l` to choose, or press Esc for **No**.
 - **Right-click**, or use the first footer shortcut, to manage models:
-  `[v]oxtype tui` opens Voxtype's terminal menu and `[m]odels` opens Hex's model
-  picker.
+  `[v]oxtype tui` opens Voxtype's terminal menu and `[m]odel picker` opens Hex's
+  model window.
 
 The footer contains that shortcut, `[s]ettings`,
 `[r]eplacements` and `[t]ranscripts`. Bracketed keys use the system theme's

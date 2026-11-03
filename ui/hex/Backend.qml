@@ -4,7 +4,7 @@ import QtQuick
 QtObject {
   readonly property string label: "Hex"
   readonly property string toolShortcut: "m"
-  readonly property string toolSuffix: "odels"
+  readonly property string toolSuffix: "odel picker"
   readonly property string toolHint: "R-click: Models"
 
   function toolCommand(controlPath) {

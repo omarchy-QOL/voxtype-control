@@ -191,6 +191,9 @@ assert.ok(!widget.includes("slotSize: Style.bar.statusSlot"));
 const voxtypeUi = fs.readFileSync(new URL("../ui/voxtype/Backend.qml", import.meta.url), "utf8");
 const hexUi = fs.readFileSync(new URL("../ui/hex/Backend.qml", import.meta.url), "utf8");
 assert.ok(hexUi.includes('toolShortcut: "m"') && !hexUi.includes("omarchy-launch-terminal"));
+// A shorter Hex footer would narrow the panel until the primary labels clip.
+const suffix = (qml) => qml.match(/toolSuffix: "(.*)"/)[1];
+assert.ok(suffix(hexUi).length >= suffix(voxtypeUi).length);
 assert.ok(widget.includes('voxtype.backend === "hex" ? hexBackend : voxtypeBackend'));
 const launch = vm.createContext({
   backendUi: {},
