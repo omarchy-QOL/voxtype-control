@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "omarchy-qol.voxtype-control",
   "name": "Voxtype Control",
-  "version": "0.5.0-rc.1",
+  "version": "0.5.0",
   "author": "ilyaZar",
   "license": "MIT",
   "description": "Minimalist and easy to use local STT model controls for Voxtype. Voxtype TUI fires on right click, and the plugin menu on left click. Convenient features such as quick model switching, word replacement edits and transcript recovery.",

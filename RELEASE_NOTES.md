@@ -1,4 +1,4 @@
-# v0.5.0-rc.1
+# 0.5.0
 
 Local release candidate on `dev`. Not published or submitted to the marketplace.
 
@@ -43,7 +43,6 @@ recording-failure pulse work left uncommitted in the development checkout.
 
 ## Promotion
 
-Review and test this candidate before merging `dev` into upstream `main`.
-Choose the final stable version and create the stable release only after that
-merge. Marketplace submission is a separate approval step. No publication or
-upstream merge is part of preparing this candidate.
+Review and test before merging `dev` into upstream `main`. Publish 0.5.0 only
+after that merge. Marketplace submission is a separate approval step. No
+publication or upstream merge is part of this preparation.
