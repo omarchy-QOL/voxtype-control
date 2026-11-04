@@ -1,52 +1,56 @@
 # 0.5.0
 
-Local release candidate on `dev`. Not published or submitted to the marketplace.
+Release candidate on `dev`; promotion to `main` remains pending.
 
 ## Changes
 
-- Replace the duplicate action buttons with a clickable shortcut footer.
-- Use theme yellow for bracketed shortcut keys and add a footer divider.
-- Fit the main panel to its controls rather than the removed button row.
-- Place the shorter apply button beside `[C]opy last transcript`.
-- Copy the newest stored transcript through the shared history action, even
-  when the history list is stale or search-filtered.
-- Add a balanced two-line copy tooltip and explicit clipboard confirmation.
-- Show Switching in theme yellow in the microphone hover tooltip; keep Ready
-  green.
-- Align widget service lookup and popup routing with the new manifest ID.
-- Add transcript scrolling, copy-on-selection, copy feedback, and a default-yes
-  close prompt after full transcript copies.
-- Require confirmation for transcript deletion through `Ctrl+D` and
-  `Ctrl+Shift+D`.
-- Pulse the microphone yellow on recording failures, accepting failure reports
-  under both the current and previous plugin IDs.
+- Switch between Voxtype and Hex from the panel header without changing the
+  model, language, replacements, and transcript workflows.
+- Keep backend UI under `ui/voxtype` and `ui/hex`, with common controls under
+  `ui/shared`.
+- Keep panel width stable across backends and fit primary action labels.
+- Discard stale status, backend-list, and model-catalog replies after changes.
+- Follow dictation directly through the backend-aware helper.
+- Keep shared replacements and durable transcript history outside the plugin.
+- Provide transcript search, scrolling, copy-on-selection, clipboard feedback,
+  and confirmed deletion. Full-entry copies offer a default-yes close prompt.
+- Report recording failures through notifications and the microphone indicator.
 
-## Plugin identity
+## Dependencies and ownership
 
-The candidate uses `omarchy-qol.voxtype-control`, replacing the v0.4.0 ID
-`io.github.ilyazar.voxtype-control`. Existing installations are not renamed
-or migrated automatically. Back up local plugin edits and update enabled-plugin,
-bar, and desktop-shortcut references when adopting the new ID. Do not enable
-both identities at once. Model files and transcript history are external to
-this plugin and are not removed by the identity change.
+Install the separate schema-5 `dictation-control` helper from the Workflow
+Voxtype setup. The helper owns backend selection, model operations, shared
+replacements, history, and delivery. Desktop shortcuts must call that entry
+point. Hex additionally needs `hex-bin` and an installed model.
 
-The separately installed schema-4 `voxtype-control` helper remains required.
-This candidate does not change or restart capture or ASR services.
+The companion helper changes serialize switching and recording, validate a
+saved selection before stopping working dictation, and stop failed loads.
+Hex transcript capture and delivery share the recording lock. Replacement
+saves check the active backend before changing the dictionary.
 
-## Validation
+The plugin ID is `omarchy-qol.voxtype-control`. Models, application settings,
+replacements, and transcript history are independently owned and retained when
+removing the plugin.
 
-- Native plugin manifest validation and Qt 6 lint checks.
-- JavaScript tests for shortcut dispatch, layout, ID consistency, and shared
-  latest-transcript copying.
-- 29 isolated Quickshell/QML runtime cases, including equal-height buttons,
-  label fit, themed shortcut colors, the two-line hover tooltip, transcript
-  selection and copy confirmation, and recording-failure feedback.
-- Live UI and clipboard acceptance for the UI changes using the existing
-  installation. The new identity still requires an isolated installation
-  acceptance check before promotion.
+## Validation and remaining gates
+
+The plugin passes native validation, Qt 6 lint, JavaScript checks, and 33
+isolated Quickshell/QML cases. The companion helper passes 150 tests, including
+real CLI configuration validation, with no skips.
+
+Isolated checks with the real backends have exercised mouse switching in both
+directions, model restoration, stable panel width, transcript search/copy,
+and speech delivered into an unsent terminal with matching stored text.
+These checks do not replace the user's microphone acceptance or a real reboot
+with Hex selected.
+
+Native removal has a confirmed open-tool cleanup failure: a Voxtype TUI and
+its terminal launched from the widget remain running after plugin removal.
+Closing test-created processes manually does not make that case pass. The
+removal behavior needs a decision before claiming general lifecycle readiness.
 
 ## Promotion
 
-Review and test before merging `dev` into upstream `main`. Publish 0.5.0 only
-after that merge. Marketplace submission is a separate approval step. No
-publication or upstream merge is part of this preparation.
+Resolve the removal contract, complete the remaining acceptance checks, and
+record exact plugin/helper revisions before the merge decision. Publishing a
+release and marketplace submission remain separate actions.
