@@ -605,7 +605,7 @@ TestCase {
   }
 
   function cleanupTestCase() {
-    if (passed === 32) console.log("VOXTYPE_QML_TESTS_PASSED")
+    if (passed === 33) console.log("VOXTYPE_QML_TESTS_PASSED")
     else console.error("VOXTYPE_QML_TESTS_FAILED: " + passed)
   }
 
