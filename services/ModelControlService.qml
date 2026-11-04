@@ -166,6 +166,7 @@ QtObject {
   }
 
   function selectBackend(name) {
+    revision++
     backend = name
     modelOptions = []
     followerHealthy = false
@@ -212,7 +213,7 @@ QtObject {
   }
 
   function request(argv) {
-    if (busy) { warn("Voxtype is busy. Try again when it is ready.", "busy"); return }
+    if (busy) { warn("Dictation is busy. Try again when it is ready.", "busy"); return }
     if (dictating && ["apply", "unload", "use"].indexOf(argv[0]) !== -1) {
       warn("Stop dictation before applying changes.", "dictation")
       return
@@ -270,9 +271,12 @@ QtObject {
     }
   }
   property Process backendsProcess: Process {
+    property int epoch: 0
+    onStarted: epoch = root.revision
     command: [root.controlPath, "backends"]
     stdout: StdioCollector { id: backendsOutput; waitForEnd: true }
     onExited: function(code) {
+      if (epoch !== root.revision) { root.refreshMetadata(); return }
       try {
         if (code !== 0) return
         var data = JSON.parse(String(backendsOutput.text))
@@ -283,10 +287,13 @@ QtObject {
     }
   }
   property Process catalogProcess: Process {
+    property int epoch: 0
+    onStarted: epoch = root.revision
     command: [root.controlPath, "list"]
     stdout: StdioCollector { id: catalogOutput; waitForEnd: true }
     stderr: StdioCollector { id: catalogErrors; waitForEnd: true }
     onExited: function(code) {
+      if (epoch !== root.revision) { root.refreshMetadata(); return }
       try {
         if (code !== 0) throw new Error(String(catalogErrors.text).trim())
         var entries = JSON.parse(String(catalogOutput.text))
@@ -307,7 +314,7 @@ QtObject {
         root.updateHardware(hardwareOutput.text)
       } catch (failure) {
         root.hardwareLabel = "GPU unavailable"
-        console.warn("Voxtype hardware:", root.cleanError(failure))
+        console.warn("Dictation hardware:", root.cleanError(failure))
       }
     }
   }

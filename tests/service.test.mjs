@@ -236,6 +236,35 @@ context.backend = "voxtype";
 context.modelOptions = catalog;
 console.log("ok - language policies, draft validation, state and process requests");
 
+// Old metadata must never restore a backend or catalog after switching.
+for (const name of ["backendsProcess", "catalogProcess"]) {
+  const process = source.split(`property Process ${name}: Process {`)[1].split("\n  }")[0];
+  assert.ok(process.includes("onStarted: epoch = root.revision"));
+  const handler = process.match(/onExited: (function\(code\) \{[^]*\n    \})/)[1];
+  const current = [{ value: "hex-model", codes: ["auto"] }];
+  let refreshes = 0;
+  const root = { revision: 5, backend: "hex", modelOptions: current,
+    backends: [{ value: "hex" }], catalogError: "", metadataUpdated() {},
+    refreshMetadata() { refreshes++; },
+    selectBackend(value) { this.backend = value; }, cleanError(value) { return String(value); } };
+  const stale = vm.createContext({ root, epoch: 4, console,
+    backendsOutput: { text: '{"selected":"voxtype","backends":[]}' },
+    catalogOutput: { text: '[{"value":"old-model"}]' }, catalogErrors: { text: "stale error" } });
+  const exit = vm.runInContext(`(${handler})`, stale);
+  for (const code of [0, 1]) {
+    exit(code);
+    assert.equal(root.backend, "hex");
+    assert.equal(root.modelOptions, current);
+    assert.equal(root.catalogError, "");
+  }
+  assert.equal(refreshes, 2);
+  stale.epoch = root.revision;
+  exit(0);
+  if (name === "backendsProcess") assert.equal(root.backend, "voxtype");
+  else assert.equal(root.modelOptions[0].value, "old-model");
+}
+console.log("ok - delayed backend and catalog replies are discarded after switching");
+
 const models = [
   { label: "Parakeet TDT v3 INT8", engine: "parakeet", value: "p", installed: true },
   { label: "Whisper medium", engine: "whisper", value: "w", installed: false },

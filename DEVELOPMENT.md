@@ -26,7 +26,9 @@ each panel. Both dropdowns use an explicit QML Binding so upstream writes to
 resets the draft to the controller selection.
 
 The live status stream takes precedence over polling. A revision guard rejects
-pre-action poll responses. Hardware refresh runs at startup and on metadata
+pre-action status, backend-list, and model-catalog responses. Backend changes
+also invalidate outstanding metadata before requesting the new catalog.
+Hardware refresh runs at startup and on metadata
 refresh, not on each status poll. A unique configured GPU match is required
 on multi-GPU hosts; hardware presence does not establish inference acceleration.
 
