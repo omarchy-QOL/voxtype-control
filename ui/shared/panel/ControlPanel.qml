@@ -10,6 +10,7 @@ KeyboardPanel {
     required property var panelOwner
     required property var voxtype
     required property var backendUi
+    property var backendTools: [backendUi]
     property bool editingReplacements: false
     property color foreground: Color.foreground
     property color dim: Qt.darker(foreground, 1.55)

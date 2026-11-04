@@ -10,11 +10,15 @@ Item {
     property color foreground: Color.foreground
     property string fontFamily: Style.font.family
     property bool hasCursor: false
+    property var labelVariants: []
 
     signal clicked
     signal hovered(bool hovered)
 
-    implicitWidth: label.implicitWidth
+    implicitWidth: labelVariants.reduce(function (width, tool) {
+        return Math.max(width, Math.ceil(metrics.advanceWidth("[" + tool.toolShortcut + "]"))
+            + Math.ceil(metrics.advanceWidth(tool.toolSuffix)));
+    }, label.implicitWidth)
     implicitHeight: label.implicitHeight
     opacity: enabled ? 1 : 0.45
     Accessible.role: Accessible.Link
@@ -22,6 +26,14 @@ Item {
     Accessible.description: "Shortcut " + shortcut
     Accessible.onPressAction: if (root.enabled)
         root.clicked()
+
+    FontMetrics {
+        id: metrics
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        font.bold: true
+        font.letterSpacing: 0.8
+    }
 
     Row {
         id: label

@@ -135,6 +135,7 @@ Panel {
         bar: root.bar
         voxtype: root.voxtype
         backendUi: root.backendUi
+        backendTools: [voxtypeBackend, hexBackend]
         editingReplacements: root.editingReplacements
         foreground: root.foreground
         dim: root.dim

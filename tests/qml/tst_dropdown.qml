@@ -6,6 +6,8 @@ import "../.." as Plugin
 import "../../ui/shared/bar" as BarUi
 import "../../ui/shared/panel" as PanelUi
 import "../../ui/shared/transcripts" as TranscriptUi
+import "../../ui/voxtype" as VoxtypeUi
+import "../../ui/hex" as HexUi
 
 TestCase {
   id: test
@@ -80,6 +82,7 @@ TestCase {
       readonly property string toolShortcut: "v"
       readonly property string toolSuffix: "oxtype tui"
     }
+    property var backendTools: [voxtypeUi, hexUi]
     property var historyService: null
     property var actions: []
     property int actionIndex: 0
@@ -102,6 +105,9 @@ TestCase {
     function openHistory() {}
     onConfigureRequested: tools++
   }
+
+  VoxtypeUi.Backend { id: voxtypeUi }
+  HexUi.Backend { id: hexUi }
 
   PanelUi.Body {
     id: bodyFixture
@@ -378,6 +384,19 @@ TestCase {
     compare(findChild(bodyFixture.copyLastButton, "copyLastCaption").truncated, false)
     bodyFixture.visible = false
     bodyFixture.width = 360
+    passed++
+  }
+
+  function test_backend_footer_width_stays_constant() {
+    var previous = panelFixture.backendUi
+    panelFixture.backendUi = voxtypeUi
+    wait(0)
+    var width = footerFixture.implicitWidth
+    panelFixture.backendUi = hexUi
+    wait(0)
+    compare(footerFixture.implicitWidth, width)
+    verify(footerFixture.configureShortcut.width > 0)
+    panelFixture.backendUi = previous
     passed++
   }
 

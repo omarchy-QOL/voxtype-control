@@ -19,6 +19,7 @@ Row {
         id: configureShortcut
         shortcut: root.panel.backendUi.toolShortcut
         suffix: root.panel.backendUi.toolSuffix
+        labelVariants: root.panel.backendTools
         shortcutColor: root.panel.warning
         foreground: root.panel.dim
         fontFamily: root.panel.fontFamily
