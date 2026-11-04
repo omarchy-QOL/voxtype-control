@@ -35,8 +35,8 @@ removing the plugin.
 ## Validation and remaining gates
 
 The plugin passes native validation, Qt 6 lint, JavaScript checks, and 33
-isolated Quickshell/QML cases. The companion helper passes 150 tests, including
-real CLI configuration validation, with no skips.
+isolated Quickshell/QML cases. The companion helper passes its full suite, including real CLI configuration
+validation, with no skips.
 
 Isolated checks with the real backends have exercised mouse switching in both
 directions, model restoration, stable panel width, transcript search/copy,
