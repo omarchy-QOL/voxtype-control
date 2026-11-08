@@ -22,7 +22,7 @@ Column {
         message: root.panel.voxtype && root.panel.voxtype.message ? root.panel.voxtype.message : root.panel.selectedModel ? root.panel.selectedModel.reason : ""
         warning: root.panel.voxtype && root.panel.voxtype.message !== "" && root.panel.voxtype.messageIsWarning
         warningColor: root.panel.warning
-        fontFamily: root.panel.bar ? root.panel.bar.fontFamily : Style.font.family
+        fontFamily: root.panel.fontFamily
     }
 
     Row {
@@ -37,13 +37,10 @@ Column {
             selectedValue: root.panel.draftModelId
             options: root.panel.voxtype ? root.panel.voxtype.localModels : []
             foreground: root.panel.foreground
-            fontFamily: root.panel.bar ? root.panel.bar.fontFamily : Style.font.family
+            fontFamily: root.panel.fontFamily
             enabled: root.panel.voxtype && root.panel.voxtype.controlAvailable && !root.panel.voxtype.busy
-            hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(modelDropdown)
-            onHovered: function (hovered) {
-                if (hovered)
-                    root.panel.actionIndex = root.panel.actions.indexOf(modelDropdown);
-            }
+            hasCursor: root.panel.cursorOn(modelDropdown)
+            onHovered: hovered => root.panel.trackHover(modelDropdown, hovered)
             onChanged: function (value) {
                 root.panel.draftTouched = true;
                 root.panel.draftModelId = value;
@@ -65,11 +62,8 @@ Column {
             bordered: true
             enabled: root.panel.voxtype && root.panel.voxtype.loaded && !root.panel.voxtype.busy && !root.panel.voxtype.dictating
             focusable: false
-            hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(unloadButton)
-            onHovered: function (hovered) {
-                if (hovered)
-                    root.panel.actionIndex = root.panel.actions.indexOf(unloadButton);
-            }
+            hasCursor: root.panel.cursorOn(unloadButton)
+            onHovered: hovered => root.panel.trackHover(unloadButton, hovered)
             onClicked: root.panel.unloadingModel = true
         }
     }
@@ -82,13 +76,10 @@ Column {
         selectedValue: root.panel.draftLanguage
         options: root.panel.languageOptions
         foreground: root.panel.foreground
-        fontFamily: root.panel.bar ? root.panel.bar.fontFamily : Style.font.family
+        fontFamily: root.panel.fontFamily
         enabled: root.panel.voxtype && root.panel.voxtype.controlAvailable && !root.panel.voxtype.busy && root.panel.selectedModel && root.panel.selectedModel.codes.length > 1
-        hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(languageDropdown)
-        onHovered: function (hovered) {
-            if (hovered)
-                root.panel.actionIndex = root.panel.actions.indexOf(languageDropdown);
-        }
+        hasCursor: root.panel.cursorOn(languageDropdown)
+        onHovered: hovered => root.panel.trackHover(languageDropdown, hovered)
         onChanged: function (value) {
             root.panel.draftTouched = true;
             root.panel.draftLanguage = value;
@@ -116,11 +107,8 @@ Column {
             enabled: root.panel.canApply
             opacity: enabled || spinning ? 1 : 0.45
             bordered: true
-            hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(applyButton)
-            onHovered: function (hovered) {
-                if (hovered)
-                    root.panel.actionIndex = root.panel.actions.indexOf(applyButton);
-            }
+            hasCursor: root.panel.cursorOn(applyButton)
+            onHovered: hovered => root.panel.trackHover(applyButton, hovered)
             foreground: root.panel.foreground
             fontFamily: root.panel.fontFamily
             onClicked: root.panel.applyDraft()
@@ -136,11 +124,8 @@ Column {
             bordered: true
             enabled: root.panel.historyService && !root.panel.historyService.busy
             opacity: enabled ? 1 : 0.45
-            hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(copyLastButton)
-            onHovered: function (hovered) {
-                if (hovered)
-                    root.panel.actionIndex = root.panel.actions.indexOf(copyLastButton);
-            }
+            hasCursor: root.panel.cursorOn(copyLastButton)
+            onHovered: hovered => root.panel.trackHover(copyLastButton, hovered)
             onClicked: root.panel.copyLastTranscript()
         }
     }

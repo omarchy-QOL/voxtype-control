@@ -10,11 +10,9 @@ Item {
     property alias backendSwitcher: backendSwitcher
     property color foreground: Color.foreground
     property color dim: Qt.darker(foreground, 1.55)
-    property color ready: Color.accent
-    property color urgent: Color.urgent
-    required property color warning
-    readonly property color stateColor: service && service.recordingFailure ? warning : service && service.stateLabel === "Ready" ? ready : foreground
-    readonly property color statusColor: service && service.recordingFailure ? warning : service && service.dictationState === "recording" ? urgent : service && service.reloading ? warning : service && service.readyFlash ? ready : service && service.dictationState === "transcribing" ? warning : foreground
+    // The bar owns the state palette so the icon and panel never disagree.
+    required property color statusColor
+    required property color stateColor
     property string statusIcon: "󰍬"
     property string fontFamily: Style.font.family
     implicitHeight: Math.max(titleBlock.implicitHeight, modelBox.implicitHeight)
@@ -43,11 +41,8 @@ Item {
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 enabled: root.service && !root.service.busy && !root.service.dictating
-                hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(backendSwitcher)
-                onHovered: function (hovered) {
-                    if (hovered)
-                        root.panel.actionIndex = root.panel.actions.indexOf(backendSwitcher);
-                }
+                hasCursor: root.panel.cursorOn(backendSwitcher)
+                onHovered: hovered => root.panel.trackHover(backendSwitcher, hovered)
                 onChanged: function (value) {
                     root.service.useBackend(value);
                 }

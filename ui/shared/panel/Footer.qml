@@ -23,12 +23,9 @@ Row {
         shortcutColor: root.panel.warning
         foreground: root.panel.dim
         fontFamily: root.panel.fontFamily
-        hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(configureShortcut)
+        hasCursor: root.panel.cursorOn(configureShortcut)
         enabled: root.panel.voxtype && root.panel.voxtype.controlAvailable && !root.panel.voxtype.busy
-        onHovered: function (hovered) {
-            if (hovered)
-                root.panel.actionIndex = root.panel.actions.indexOf(configureShortcut);
-        }
+        onHovered: hovered => root.panel.trackHover(configureShortcut, hovered)
         onClicked: root.panel.configureRequested()
     }
 
@@ -39,12 +36,9 @@ Row {
         shortcutColor: root.panel.warning
         foreground: root.panel.dim
         fontFamily: root.panel.fontFamily
-        hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(settingsShortcut)
+        hasCursor: root.panel.cursorOn(settingsShortcut)
         enabled: root.panel.voxtype !== null
-        onHovered: function (hovered) {
-            if (hovered)
-                root.panel.actionIndex = root.panel.actions.indexOf(settingsShortcut);
-        }
+        onHovered: hovered => root.panel.trackHover(settingsShortcut, hovered)
         onClicked: root.panel.configFileRequested()
     }
 
@@ -55,12 +49,9 @@ Row {
         shortcutColor: root.panel.warning
         foreground: root.panel.dim
         fontFamily: root.panel.fontFamily
-        hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(replacementsShortcut)
+        hasCursor: root.panel.cursorOn(replacementsShortcut)
         enabled: root.panel.voxtype && root.panel.voxtype.controlAvailable && !root.panel.voxtype.busy
-        onHovered: function (hovered) {
-            if (hovered)
-                root.panel.actionIndex = root.panel.actions.indexOf(replacementsShortcut);
-        }
+        onHovered: hovered => root.panel.trackHover(replacementsShortcut, hovered)
         onClicked: root.panel.replacementsRequested()
     }
 
@@ -71,12 +62,9 @@ Row {
         shortcutColor: root.panel.warning
         foreground: root.panel.dim
         fontFamily: root.panel.fontFamily
-        hasCursor: root.panel.panelOwner.opened && root.panel.actionIndex === root.panel.actions.indexOf(historyShortcut)
+        hasCursor: root.panel.cursorOn(historyShortcut)
         enabled: root.panel.voxtype && root.panel.voxtype.history
-        onHovered: function (hovered) {
-            if (hovered)
-                root.panel.actionIndex = root.panel.actions.indexOf(historyShortcut);
-        }
+        onHovered: hovered => root.panel.trackHover(historyShortcut, hovered)
         onClicked: root.panel.openHistory()
     }
 }

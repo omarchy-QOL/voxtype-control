@@ -63,7 +63,8 @@ TestCase {
     width: 320
     service: service
     panel: panelFixture
-    warning: colors.warning
+    statusColor: reloadIcon.color
+    stateColor: colors.ready
   }
   BarUi.TooltipContent {
     id: tooltip
@@ -103,6 +104,8 @@ TestCase {
     signal configureRequested
     function focusControls() {}
     function openHistory() {}
+    function cursorOn(action) { return panelOwner.opened && actionIndex === actions.indexOf(action) }
+    function trackHover(action, hovered) { if (hovered) actionIndex = actions.indexOf(action) }
     onConfigureRequested: tools++
   }
 
@@ -645,8 +648,7 @@ TestCase {
     service.updateStatus('{"schema":5,"backend":"voxtype","loaded":true,"endpoint_ready":true,"busy":true}')
     verify(service.reloading)
     compare(reloadIcon.color, colors.warning)
-    compare(panelHeader.statusColor, colors.warning)
-    compare(String(panelHeader.statusColor), "#e5c07b")
+    compare(String(reloadIcon.color), "#e5c07b")
     service.statusProcess.epoch = service.revision
     service.operationBusy = false
     service.finishAction(true, "")

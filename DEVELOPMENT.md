@@ -74,7 +74,8 @@ proportional to their natural labels. `CopyLastTranscriptButton.qml` colors
 history service with `copy("latest")`, letting the helper resolve the newest
 stored entry regardless of stale or filtered UI data. Copy availability and
 feedback are independent of model loading; failures use the history error
-rather than reporting success. The bar hover state uses theme yellow while
+rather than reporting success. The bar widget owns one state palette that the
+icon, hover tooltip, and panel header share. It uses theme yellow while
 switching, including the interval before readiness is freshly confirmed.
 
 ## Transcript history

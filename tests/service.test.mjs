@@ -433,19 +433,19 @@ for (const label of ["Installing", "Transcribing", "Unavailable", "Unloaded"]) {
 }
 status.voxtype.stateLabel = "Listening";
 assert.equal(vm.runInContext(stateColor, status), "white");
-assert.equal(widget.match(/stateColor: root\.stateColor/g).length, 1);
-assert.ok(statusHeader.includes('service.stateLabel === "Ready" ? ready : foreground'));
-assert.ok(statusHeader.includes("service.recordingFailure ? warning"));
-assert.ok(statusHeader.includes('service.dictationState === "recording" ? urgent'));
+// The tooltip and panel header share the bar's palette instead of recomputing it.
+assert.equal(widget.match(/stateColor: root\.stateColor/g).length, 2);
+assert.equal(widget.match(/statusColor: root\.statusColor/g).length, 1);
+assert.ok(!statusHeader.includes('=== "Ready" ?') && !statusHeader.includes("service.reloading"));
 assert.ok(widget.includes("root.voxtype.reloading || root.voxtype.recordingFailure"));
 assert.ok(source.includes('target: "omarchy-qol.voxtype-control"'));
 assert.ok(!source.includes("io.github.ilyazar"));
 assert.ok(!source.includes("omarchy-voxtype-status"));
 assert.ok(source.includes("function recordFailure(message: string): void"));
-assert.ok(statusHeader.includes("required property color warning"));
+assert.ok(statusHeader.includes("required property color statusColor"));
 assert.ok(controls.includes("ready: root.ready"));
 assert.ok(controls.includes("urgent: root.urgent"));
-assert.ok(controls.includes("warning: root.warning"));
+assert.ok(controls.includes("stateColor: root.stateColor") && controls.includes("warningColor: root.warning"));
 assert.ok(!widget.match(/#[0-9a-fA-F]{6}/));
 const manifest = JSON.parse(fs.readFileSync(new URL('../manifest.json', import.meta.url), 'utf8'));
 assert.ok(widget.includes(`moduleName: "${manifest.id}"`));

@@ -37,7 +37,7 @@ Panel {
     function launchConfigFile() {
         close();
         if (voxtype)
-            Quickshell.execDetached(backendUi.settingsCommand(voxtype.controlPath));
+            Quickshell.execDetached([voxtype.controlPath, "edit-config"]);
     }
 
     function launchReplacements() {
@@ -143,6 +143,8 @@ Panel {
         ready: root.ready
         warning: root.warning
         statusIcon: root.statusIcon
+        statusColor: root.statusColor
+        stateColor: root.stateColor
         fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
         onCloseRequested: root.close()
         onConfigureRequested: root.launchConfiguration()

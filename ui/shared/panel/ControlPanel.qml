@@ -18,6 +18,8 @@ KeyboardPanel {
     property color ready: Color.accent
     property color warning: Color.urgent
     property string statusIcon: "󰍬"
+    property color statusColor: foreground
+    property color stateColor: foreground
     property string fontFamily: Style.font.family
     property string draftModelId: ""
     property string draftLanguage: ""
@@ -49,6 +51,15 @@ KeyboardPanel {
     signal configureRequested
     signal configFileRequested
     signal replacementsRequested
+
+    function cursorOn(action) {
+        return root.panelOwner.opened && root.actionIndex === root.actions.indexOf(action);
+    }
+
+    function trackHover(action, hovered) {
+        if (hovered)
+            root.actionIndex = root.actions.indexOf(action);
+    }
 
     function applyDraft() {
         if (root.canApply)
@@ -172,7 +183,7 @@ KeyboardPanel {
     open: root.panelOwner.opened && !root.editingReplacements
     focusTarget: keyCatcher
     contentWidth: root.fittedContentWidth(root.showingHistory ? Style.space(440) : root.unloadingModel && unloadLoader.item ? unloadLoader.item.implicitWidth + root.horizontalInset : root.preferredControlsWidth)
-    contentHeight: root.fittedContentHeight(root.showingHistory && historyLoader.item ? historyLoader.item.implicitHeight : root.unloadingModel && unloadLoader.item ? unloadLoader.item.implicitHeight : content.implicitHeight)
+    contentHeight: root.fittedContentHeight(root.showingHistory && historyLoader.item ? historyLoader.item.implicitHeight : root.unloadingModel && unloadLoader.item ? unloadLoader.item.implicitHeight : mainControls.implicitHeight)
 
     Loader {
         id: historyLoader
@@ -236,7 +247,7 @@ KeyboardPanel {
                     width: unloadLoader.width
                     service: root.voxtype
                     foreground: root.foreground
-                    fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+                    fontFamily: root.fontFamily
                     onCancelled: {
                         root.unloadingModel = false;
                         Qt.callLater(root.focusControls);
@@ -246,7 +257,7 @@ KeyboardPanel {
         }
 
         Column {
-            id: content
+            id: mainControls
             visible: !root.unloadingModel && !root.showingHistory
             width: parent.width
             spacing: Style.space(10)
@@ -257,10 +268,9 @@ KeyboardPanel {
                 panel: root
                 service: root.voxtype
                 foreground: root.foreground
-                ready: root.ready
-                urgent: root.urgent
-                warning: root.warning
                 statusIcon: root.statusIcon
+                statusColor: root.statusColor
+                stateColor: root.stateColor
                 fontFamily: root.fontFamily
             }
 
