@@ -147,8 +147,10 @@ omarchy plugin remove omarchy-qol.voxtype-control
 ```
 
 This removes the panel, not Voxtype, the helper, transcripts, models, or
-replacements. If you hid the stock dictation indicator, add `Dictation` back
-as described above.
+replacements. Terminals, TUIs, and editors opened from the panel are your
+applications and stay open, so unsaved edits are never interrupted; close them
+yourself. If you hid the stock dictation indicator, add `Dictation` back as
+described above.
 
 ## Development
 

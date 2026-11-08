@@ -44,13 +44,14 @@ and speech delivered into an unsent terminal with matching stored text.
 These checks do not replace the user's microphone acceptance or a real reboot
 with Hex selected.
 
-Native removal has a confirmed open-tool cleanup failure: a Voxtype TUI and
-its terminal launched from the widget remain running after plugin removal.
-Closing test-created processes manually does not make that case pass. The
-removal behavior needs a decision before claiming general lifecycle readiness.
+Applications opened from the panel, such as the Voxtype TUI and its terminal,
+are independent and stay open after plugin removal.
+This is the intended contract, so removal never interrupts unsaved editing.
+A strict review that requires every launched process to exit records this as
+an accepted exception, not as a clean result.
 
 ## Promotion
 
-Resolve the removal contract, complete the remaining acceptance checks, and
+Complete the remaining acceptance checks and
 record exact plugin/helper revisions before the merge decision. Publishing a
 release and marketplace submission remain separate actions.
